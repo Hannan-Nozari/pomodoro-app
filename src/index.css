@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Smooth transitions for the progress ring and panel */
+@layer utilities {
+  .transition-height {
+    transition: max-height 0.35s ease, opacity 0.35s ease;
+  }
+}
+
+/* Remove default margins */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background-color: #fafafa;
+  -webkit-font-smoothing: antialiased;
+}

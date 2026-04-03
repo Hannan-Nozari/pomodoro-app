@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Simple tomato favicon -->
+  <circle cx="16" cy="18" r="12" fill="#E05252"/>
+  <path d="M16 8 Q18 4 22 5 Q20 8 18 9 Q22 7 24 10 Q20 10 18 12 Q16 8 16 8Z" fill="#4CAF50"/>
+</svg>

@@ -1,0 +1,13 @@
+{
+  "appId": "com.pomodoro.app",
+  "appName": "Pomodoro Timer",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 0
+    }
+  }
+}
