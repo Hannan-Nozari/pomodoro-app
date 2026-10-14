@@ -20,4 +20,19 @@ body {
     'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   background-color: #fafafa;
   -webkit-font-smoothing: antialiased;
+  /* Android 15 draws the app edge-to-edge, so keep content clear of the status
+     bar, the gesture pill, and any display cutout. */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+           env(safe-area-inset-bottom) env(safe-area-inset-left);
+  /* Kill the pull-to-refresh / overscroll bounce — it makes a timer screen feel
+     like a web page rather than an app. */
+  overscroll-behavior: none;
+}
+
+/* The timer face is the one thing users tap around; never let a long-press
+   selection highlight appear on the controls. */
+button {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
 }

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { scheduleAlarm, cancelAlarm, ensureAlarmPermission } from '../lib/alarm'
 
 // ─── localStorage helpers ────────────────────────────────────────────────────
 const load = (key, fallback) => {
@@ -73,16 +74,44 @@ export function usePomodoro() {
   const [tasks,        setTasksState]        = useState(() => load('pomo_tasks', []))
   const [history,      setHistoryState]      = useState(() => load('pomo_history', []))
 
+  // --- Restored session ---
+  // A phone kills backgrounded apps freely, so the in-flight session is written
+  // to storage and picked back up on launch. `deadline` is the wall-clock time
+  // the session ends, which is what makes an accurate resume possible.
+  // Read once at mount: this runs on every render otherwise, and the values
+  // must describe the moment the app opened, not the latest render.
+  const restoredRef = useRef(null)
+  if (restoredRef.current === null) {
+    const saved = load('pomo_session', null)
+    restoredRef.current = {
+      saved,
+      remaining: saved?.deadline
+        ? Math.round((saved.deadline - Date.now()) / 1000)
+        : null,
+    }
+  }
+  const { saved: restored, remaining: restoredRemaining } = restoredRef.current
+
   // --- Runtime state ---
-  const [sessionType,  setSessionType]  = useState(SESSION_TYPES.WORK)
-  const [workCount,    setWorkCount]    = useState(0)   // completed work sessions
-  const [sessionNum,   setSessionNum]   = useState(1)   // display counter (resets on long break)
-  const [timeLeft,     setTimeLeft]     = useState(durations.work * 60)
-  const [isRunning,    setIsRunning]    = useState(false)
+  const [sessionType,  setSessionType]  = useState(restored?.sessionType ?? SESSION_TYPES.WORK)
+  const [workCount,    setWorkCount]    = useState(restored?.workCount ?? 0)   // completed work sessions
+  const [sessionNum,   setSessionNum]   = useState(restored?.sessionNum ?? 1)  // display counter (resets on long break)
+  const [timeLeft,     setTimeLeft]     = useState(() => {
+    if (restoredRemaining !== null) return Math.max(0, restoredRemaining)
+    if (Number.isFinite(restored?.timeLeft)) return restored.timeLeft
+    return durations.work * 60
+  })
+  // Only resume ticking if the session still has time left; one that expired
+  // while the app was closed is settled by the mount effect below.
+  const [isRunning,    setIsRunning]    = useState(restoredRemaining > 0)
   const [isFinished,   setIsFinished]   = useState(false)
 
   const intervalRef  = useRef(null)
   const audioCtxRef  = useRef(null)
+  // Wall-clock deadline for the running session. Ticking off a timestamp keeps
+  // the countdown honest when the OS throttles or suspends timers (mobile
+  // backgrounding, sleeping laptops) — counting interval fires would drift.
+  const deadlineRef  = useRef(null)
 
   // Keep a ref so the interval callback always sees the latest values
   const stateRef = useRef({})
@@ -103,7 +132,9 @@ export function usePomodoro() {
   }, [timeLeft, sessionType])
 
   // ── Advance to the next session ────────────────────────────────────────────
-  const advanceSession = useCallback(() => {
+  // `completedAt` is when the session actually ran out, which is not always now:
+  // a session can expire while the app is closed and only be settled on launch.
+  const advanceSession = useCallback((completedAt = Date.now()) => {
     const { sessionType, workCount, sessionNum, durations, soundEnabled, history } = stateRef.current
 
     if (soundEnabled) playBeep(audioCtxRef)
@@ -113,12 +144,13 @@ export function usePomodoro() {
       setWorkCount(newWorkCount)
 
       // Record in history
+      const finishedAt = new Date(completedAt)
       const entry = {
-        id:        Date.now(),
+        id:        completedAt,
         label:     SESSION_LABELS.work,
         session:   sessionNum,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        date:      new Date().toLocaleDateString([], { month: 'short', day: 'numeric' }),
+        timestamp: finishedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        date:      finishedAt.toLocaleDateString([], { month: 'short', day: 'numeric' }),
       }
       const newHistory = [entry, ...history].slice(0, 50) // cap at 50 entries
       setHistoryState(newHistory)
@@ -143,37 +175,104 @@ export function usePomodoro() {
     setIsFinished(true)
   }, [])
 
+  // ── Settle a session that ended while the app was closed ───────────────────
+  // The OS notification already alerted the user; this catches the app up so
+  // the session is logged and the next one is queued.
+  const settledRef = useRef(false)
+  useEffect(() => {
+    if (settledRef.current) return
+    settledRef.current = true
+    const expired = restoredRemaining !== null
+      ? restoredRemaining <= 0
+      : restored?.timeLeft === 0
+    if (expired) {
+      // Log it at the deadline it actually reached, not at app launch.
+      advanceSession(restored?.deadline ?? Date.now())
+    }
+  }, [advanceSession, restoredRemaining, restored])
+
   // ── Tick interval ──────────────────────────────────────────────────────────
   useEffect(() => {
-    if (isRunning) {
-      intervalRef.current = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 1) {
-            clearInterval(intervalRef.current)
-            // Schedule advanceSession outside setState to avoid stale closure issues
-            setTimeout(advanceSession, 0)
-            return 0
-          }
-          return prev - 1
-        })
-      }, 1000)
-    } else {
+    if (!isRunning) {
       clearInterval(intervalRef.current)
+      deadlineRef.current = null
+      // Deliberately no cancelAlarm() here. Reaching 00:00 also clears
+      // isRunning, and cancelling on that path races the OS: if the WebView is
+      // still alive it withdraws the alert at the moment it is due. The alarm
+      // is instead cancelled explicitly by pause / reset / switch.
+      return
     }
-    return () => clearInterval(intervalRef.current)
+
+    deadlineRef.current = Date.now() + stateRef.current.timeLeft * 1000
+
+    const tick = () => {
+      const remaining = Math.max(0, Math.round((deadlineRef.current - Date.now()) / 1000))
+      setTimeLeft(remaining)
+      if (remaining === 0) {
+        clearInterval(intervalRef.current)
+        deadlineRef.current = null
+        // Schedule advanceSession outside setState to avoid stale closure issues
+        setTimeout(() => advanceSession(), 0)
+      }
+    }
+
+    intervalRef.current = setInterval(tick, 250)
+
+    // Hand the end time to the OS as well: the alert has to fire even if the
+    // WebView is suspended or the app has been killed by then.
+    scheduleAlarm(deadlineRef.current, stateRef.current.sessionType)
+
+    // Re-sync the moment the app comes back to the foreground, so the display
+    // is correct immediately instead of at the next tick.
+    const onVisible = () => { if (!document.hidden && deadlineRef.current) tick() }
+    document.addEventListener('visibilitychange', onVisible)
+
+    return () => {
+      clearInterval(intervalRef.current)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
   }, [isRunning, advanceSession])
+
+  // Snapshot the in-flight session so a killed app can resume it. This must be
+  // declared after the tick effect: effects run in declaration order, and the
+  // deadline is set there, so running first would persist deadline:null for a
+  // session that has just started.
+  useEffect(() => {
+    save('pomo_session', {
+      sessionType,
+      workCount,
+      sessionNum,
+      timeLeft,
+      deadline: isRunning ? deadlineRef.current : null,
+    })
+  }, [sessionType, workCount, sessionNum, timeLeft, isRunning])
 
   // ── Controls ───────────────────────────────────────────────────────────────
   const start = useCallback(() => {
+    // Create/resume the AudioContext here, while we still have a user gesture —
+    // mobile browsers keep a context created later (at session end) suspended,
+    // which would silence the alarm.
+    try {
+      if (!audioCtxRef.current) {
+        audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)()
+      }
+      if (audioCtxRef.current.state === 'suspended') audioCtxRef.current.resume()
+    } catch {}
+
+    ensureAlarmPermission()
     setIsFinished(false)
     setIsRunning(true)
   }, [])
 
+  // Each of these abandons the pending session, so the queued alert has to go
+  // with it — otherwise it fires for a session the user already stopped.
   const pause = useCallback(() => {
+    cancelAlarm()
     setIsRunning(false)
   }, [])
 
   const reset = useCallback(() => {
+    cancelAlarm()
     setIsRunning(false)
     setIsFinished(false)
     const { durations, sessionType } = stateRef.current
@@ -182,6 +281,7 @@ export function usePomodoro() {
 
   // Jump directly to a session type (used when editing durations)
   const switchTo = useCallback((type) => {
+    cancelAlarm()
     setIsRunning(false)
     setIsFinished(false)
     setSessionType(type)

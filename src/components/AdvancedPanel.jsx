@@ -1,22 +1,46 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import TaskList from './TaskList'
 import SessionHistory from './SessionHistory'
 
 // ─── Duration input field ─────────────────────────────────────────────────────
 function DurationField({ label, value, onChange, min = 1, max = 90 }) {
+  // The field keeps its own draft text so the box can be emptied mid-edit.
+  // Validating on every keystroke would reject "" and trap the old digits,
+  // making the value impossible to replace on a phone keyboard.
+  const [draft, setDraft] = useState(String(value))
+
+  // Follow the value when it changes from outside (e.g. a reset).
+  useEffect(() => { setDraft(String(value)) }, [value])
+
+  const commit = () => {
+    const v = Number(draft)
+    const clamped = Number.isFinite(v) && draft !== ''
+      ? Math.min(max, Math.max(min, Math.round(v)))
+      : value
+    setDraft(String(clamped))
+    if (clamped !== value) onChange(clamped)
+  }
+
   return (
     <div className="flex flex-col gap-1">
       <label className="text-xs text-gray-500">{label}</label>
       <div className="flex items-center gap-1">
         <input
           type="number"
-          value={value}
+          inputMode="numeric"
+          value={draft}
           min={min}
           max={max}
           onChange={e => {
-            const v = Number(e.target.value)
-            if (v >= min && v <= max) onChange(v)
+            const next = e.target.value
+            setDraft(next)
+            // Apply immediately while the value is in range; anything else
+            // (empty, half-typed, out of bounds) settles on blur.
+            const v = Number(next)
+            if (next !== '' && v >= min && v <= max) onChange(v)
           }}
+          onBlur={commit}
+          onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }}
           className="w-16 text-sm border border-gray-200 rounded-lg px-2 py-1.5 text-center outline-none focus:border-tomato focus:ring-1 focus:ring-tomato tabular-nums transition-colors"
         />
         <span className="text-xs text-gray-400">min</span>
