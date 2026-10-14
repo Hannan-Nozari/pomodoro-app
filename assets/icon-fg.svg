@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <radialGradient id="tom" cx="0.36" cy="0.32" r="0.78">
+      <stop offset="0" stop-color="#EC6A6A"/>
+      <stop offset="0.65" stop-color="#E05252"/>
+      <stop offset="1" stop-color="#C63F3F"/>
+    </radialGradient>
+  </defs>
+  <g transform="translate(512,540)">
+    <circle cx="0" cy="0" r="270" fill="url(#tom)"/>
+    <!-- clock ring -->
+    <circle cx="0" cy="0" r="180" fill="none" stroke="#FFFFFF" stroke-width="26" opacity="0.30"/>
+    <path d="M0 -180 A180 180 0 0 1 180 0" fill="none" stroke="#FFFFFF" stroke-width="26" stroke-linecap="round"/>
+    <!-- hands -->
+    <rect x="-13" y="-130" width="26" height="150" rx="13" fill="#FFFFFF"/>
+    <rect x="-13" y="-13" width="120" height="26" rx="13" fill="#FFFFFF"/>
+    <circle cx="0" cy="0" r="22" fill="#FFFFFF"/>
+    <!-- leaf -->
+    <g transform="translate(0,-268)">
+      <path d="M0 20 C-40 -10 -95 -22 -130 -6 C-96 24 -44 34 -6 22 Z" fill="#4CAF50"/>
+      <path d="M0 20 C40 -10 95 -22 130 -6 C96 24 44 34 6 22 Z" fill="#43A047"/>
+      <path d="M0 26 C-16 -16 -12 -52 6 -78 C24 -50 22 -14 8 26 Z" fill="#5BBA5F"/>
+    </g>
+  </g>
+</svg>

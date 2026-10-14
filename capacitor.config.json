@@ -8,6 +8,10 @@
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 0
+    },
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_pomodoro",
+      "iconColor": "#E05252"
     }
   }
 }

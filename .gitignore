@@ -2,3 +2,22 @@ node_modules/
 dist/
 .env
 .env.local
+
+# Android build output & signing secrets
+android/build/
+android/app/build/
+android/.gradle/
+android/local.properties
+android/keystore.properties
+android/*.jks
+android/*.keystore
+
+# Copied into the Android project by `npx cap sync` — build output, not source
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+
+# macOS / IDE noise
+.DS_Store
+.idea/
+*.iml
