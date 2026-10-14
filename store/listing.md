@@ -4,12 +4,12 @@
 Pomodoro Timer
 
 ## Short description (≤80)
-A focus timer that keeps exact time even while your phone sleeps. No ads.
+Focus sessions, breaks, tasks and local history. No ads or account.
 
 ## Full description (≤4000)
 Pomodoro Timer is a focus timer built on one idea: work in one unbroken stretch, then take a real break.
 
-Set a session, start it, and put the phone down. The timer is anchored to the clock rather than to a running countdown, so it stays accurate while the app is in the background, while the screen is off, and even if Android closes the app to save memory. When the session ends you get a notification — you do not have to keep the app open to be told your time is up.
+Set a session, start it, and put the phone down. The timer is anchored to the clock rather than to a running countdown, so it stays accurate while the app is in the background, while the screen is off, and even if Android closes the app to save memory. With notification permission enabled, Android schedules an end-of-session alert. Device settings and idle-mode restrictions may affect alert delivery; force-stopping the app disables alarms until it is reopened.
 
 WHAT YOU GET
 • A clean focus timer with 25 / 5 / 15 minute defaults
@@ -24,7 +24,7 @@ PRIVACY
 Everything stays on your device. There are no accounts, no sign-in, no analytics, no trackers and no ads. The app does not collect or transmit any personal data — your sessions, tasks and history are stored locally and never leave the phone.
 
 WHY THE TIMING IS DIFFERENT
-Most web-based timers count ticks, so when Android freezes the app to save battery the countdown freezes with it and a 25 minute session quietly runs long. This one records the moment your session should end and asks Android itself to raise the alert at that moment, so the time you set is the time you get.
+Most web-based timers count ticks, so when Android freezes the app to save battery the countdown freezes with it and a 25 minute session quietly runs long. This one records the moment your session should end and asks Android itself to raise the alert at that moment, The countdown catches up to that deadline whenever you return to the app.
 
 No ads. No subscription. No account.
 
@@ -42,6 +42,7 @@ regenerated rather than hand-edited.
 
 ## Content rating
 
-Answer the IARC questionnaire with no to everything — no violence, no user
-interaction, no data sharing, no ads, no purchases. The expected result is
-Everyone / PEGI 3.
+The inspected build has no violence, online user interaction, data sharing, ads,
+or purchases. Review each IARC question against the actual build instead of
+blanket-answering the questionnaire. Confirm intended age audience with the
+developer. Google/IARC determines the final rating.

@@ -5,6 +5,7 @@ import { LocalNotifications } from '@capacitor/local-notifications'
 const ALARM_ID = 1
 
 const isNative = Capacitor.isNativePlatform()
+export const usesNativeAlarm = isNative
 
 // Permission is requested lazily, on the first Start tap, rather than at launch:
 // asking before the user has done anything reads as a shakedown and gets denied.
@@ -13,16 +14,23 @@ const isNative = Capacitor.isNativePlatform()
 // a grant is cached, but a refusal is not, so turning notifications back on in
 // system settings is picked up on the next session instead of needing a restart.
 let permissionPending = null
-let permissionGranted = false
 
 // Monotonic token for the live alarm request. Scheduling awaits the permission
 // prompt, which the user can outlast by pausing or resetting; without this the
 // late schedule would land after the cancel and alert for a dead session.
 let alarmEpoch = 0
+let operation = Promise.resolve()
+
+// Native calls can finish after a later Pause. Serialize mutations so the final
+// cancellation always runs after any schedule already submitted to Android.
+function enqueue(action) {
+  const result = operation.then(action)
+  operation = result.catch(() => {})
+  return result
+}
 
 export function ensureAlarmPermission() {
   if (!isNative) return Promise.resolve(false)
-  if (permissionGranted) return Promise.resolve(true)
   if (permissionPending) return permissionPending
 
   permissionPending = (async () => {
@@ -31,8 +39,7 @@ export function ensureAlarmPermission() {
       if (display === 'prompt' || display === 'prompt-with-rationale') {
         ;({ display } = await LocalNotifications.requestPermissions())
       }
-      permissionGranted = display === 'granted'
-      return permissionGranted
+      return display === 'granted'
     } catch (err) {
       console.warn('Notification permission unavailable:', err)
       return false
@@ -57,7 +64,7 @@ const COPY = {
  * backgrounded or killed, which the in-page beep cannot do — a WebView that
  * isn't running plays no sound.
  */
-export async function scheduleAlarm(fireAt, sessionType) {
+export async function scheduleAlarm(fireAt, sessionType, soundEnabled = true) {
   if (!isNative) return
   const epoch = ++alarmEpoch
   // Wait out the permission prompt: scheduling while it is still pending is
@@ -67,20 +74,38 @@ export async function scheduleAlarm(fireAt, sessionType) {
   // The session may have been paused, reset or replaced while we waited.
   if (epoch !== alarmEpoch || fireAt <= Date.now()) return
   const { title, body } = COPY[sessionType] ?? COPY.work
-  try {
-    await clearScheduled()
-    await LocalNotifications.schedule({
-      notifications: [{
-        id: ALARM_ID,
-        title,
-        body,
-        // allowWhileIdle so Doze doesn't hold the alert until the phone wakes.
-        schedule: { at: new Date(fireAt), allowWhileIdle: true },
-      }],
-    })
-  } catch (err) {
-    console.warn('Could not schedule alarm:', err)
-  }
+  return enqueue(async () => {
+    if (epoch !== alarmEpoch || fireAt <= Date.now()) return
+    try {
+      await clearScheduled()
+      // Android 8+ channels control sound. LOW importance is silent; the audible
+      // channel uses a bundled beep. Older Android uses the notification sound.
+      const channelId = soundEnabled ? 'session-sound' : 'session-silent'
+      try {
+        await LocalNotifications.createChannel({
+          id: channelId,
+          name: soundEnabled ? 'Session alerts with sound' : 'Silent session alerts',
+          importance: soundEnabled ? 4 : 2,
+          visibility: 1,
+          vibration: false,
+          ...(soundEnabled ? { sound: 'session_alert.wav' } : {}),
+        })
+      } catch { /* Channels are unavailable on Android 6 and 7. */ }
+      if (epoch !== alarmEpoch || fireAt <= Date.now()) return
+      await LocalNotifications.schedule({
+        notifications: [{
+          id: ALARM_ID,
+          title,
+          body,
+          channelId,
+          sound: soundEnabled ? 'session_alert.wav' : null,
+          schedule: { at: new Date(fireAt), allowWhileIdle: true },
+        }],
+      })
+    } catch (err) {
+      console.warn('Could not schedule alarm:', err)
+    }
+  })
 }
 
 // Withdraw the queued alert without touching the epoch — used when replacing one
@@ -98,5 +123,5 @@ export async function cancelAlarm() {
   if (!isNative) return
   // Invalidate any schedule still waiting on the permission prompt.
   alarmEpoch++
-  await clearScheduled()
+  await enqueue(clearScheduled)
 }

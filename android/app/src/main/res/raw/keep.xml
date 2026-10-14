@@ -4,4 +4,4 @@
      cannot see the reference and would strip it, leaving Android to fall back
      to a generic alert glyph. -->
 <resources xmlns:tools="http://schemas.android.com/tools"
-    tools:keep="@drawable/ic_stat_pomodoro" />
+    tools:keep="@drawable/ic_stat_pomodoro,@raw/session_alert" />

@@ -37,7 +37,7 @@ function DurationField({ label, value, onChange, min = 1, max = 90 }) {
             // Apply immediately while the value is in range; anything else
             // (empty, half-typed, out of bounds) settles on blur.
             const v = Number(next)
-            if (next !== '' && v >= min && v <= max) onChange(v)
+            if (next !== '' && Number.isInteger(v) && v >= min && v <= max) onChange(v)
           }}
           onBlur={commit}
           onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }}

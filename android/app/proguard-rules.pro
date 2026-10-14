@@ -30,3 +30,10 @@
 -keepclassmembers class * {
     @android.webkit.JavascriptInterface <methods>;
 }
+
+# The release instrumentation runner shares Kotlin with the target APK. Keep
+# its runtime interfaces callable across the separately shrunk APKs.
+-keep class kotlin.** { *; }
+-keep class androidx.tracing.Trace { *; }
+-keep class androidx.lifecycle.Lifecycle { *; }
+-keep class androidx.lifecycle.Lifecycle$* { *; }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { scheduleAlarm, cancelAlarm, ensureAlarmPermission } from '../lib/alarm'
+import { scheduleAlarm, cancelAlarm, ensureAlarmPermission, usesNativeAlarm } from '../lib/alarm'
 
 // ─── localStorage helpers ────────────────────────────────────────────────────
 const load = (key, fallback) => {
@@ -86,7 +86,7 @@ export function usePomodoro() {
     restoredRef.current = {
       saved,
       remaining: saved?.deadline
-        ? Math.round((saved.deadline - Date.now()) / 1000)
+        ? Math.ceil((saved.deadline - Date.now()) / 1000)
         : null,
     }
   }
@@ -111,7 +111,7 @@ export function usePomodoro() {
   // Wall-clock deadline for the running session. Ticking off a timestamp keeps
   // the countdown honest when the OS throttles or suspends timers (mobile
   // backgrounding, sleeping laptops) — counting interval fires would drift.
-  const deadlineRef  = useRef(null)
+  const deadlineRef  = useRef(restored?.deadline ?? null)
 
   // Keep a ref so the interval callback always sees the latest values
   const stateRef = useRef({})
@@ -137,7 +137,7 @@ export function usePomodoro() {
   const advanceSession = useCallback((completedAt = Date.now()) => {
     const { sessionType, workCount, sessionNum, durations, soundEnabled, history } = stateRef.current
 
-    if (soundEnabled) playBeep(audioCtxRef)
+    if (soundEnabled && !usesNativeAlarm) playBeep(audioCtxRef)
 
     if (sessionType === SESSION_TYPES.WORK) {
       const newWorkCount = workCount + 1
@@ -203,24 +203,23 @@ export function usePomodoro() {
       return
     }
 
-    deadlineRef.current = Date.now() + stateRef.current.timeLeft * 1000
+    // Keep a restored deadline, including its milliseconds. Recreating it from
+    // the rounded display adds drift every time Android recreates the WebView.
+    deadlineRef.current ??= Date.now() + stateRef.current.timeLeft * 1000
 
     const tick = () => {
-      const remaining = Math.max(0, Math.round((deadlineRef.current - Date.now()) / 1000))
+      if (deadlineRef.current === null) return
+      const completedAt = deadlineRef.current
+      const remaining = Math.max(0, Math.ceil((completedAt - Date.now()) / 1000))
       setTimeLeft(remaining)
       if (remaining === 0) {
         clearInterval(intervalRef.current)
         deadlineRef.current = null
-        // Schedule advanceSession outside setState to avoid stale closure issues
-        setTimeout(() => advanceSession(), 0)
+        advanceSession(completedAt)
       }
     }
 
     intervalRef.current = setInterval(tick, 250)
-
-    // Hand the end time to the OS as well: the alert has to fire even if the
-    // WebView is suspended or the app has been killed by then.
-    scheduleAlarm(deadlineRef.current, stateRef.current.sessionType)
 
     // Re-sync the moment the app comes back to the foreground, so the display
     // is correct immediately instead of at the next tick.
@@ -232,6 +231,13 @@ export function usePomodoro() {
       document.removeEventListener('visibilitychange', onVisible)
     }
   }, [isRunning, advanceSession])
+
+  // Sound changes replace the OS alert without restarting the countdown.
+  useEffect(() => {
+    if (isRunning && deadlineRef.current !== null) {
+      scheduleAlarm(deadlineRef.current, sessionType, soundEnabled)
+    }
+  }, [isRunning, sessionType, soundEnabled])
 
   // Snapshot the in-flight session so a killed app can resume it. This must be
   // declared after the tick effect: effects run in declaration order, and the
@@ -267,9 +273,20 @@ export function usePomodoro() {
   // Each of these abandons the pending session, so the queued alert has to go
   // with it — otherwise it fires for a session the user already stopped.
   const pause = useCallback(() => {
+    if (deadlineRef.current !== null) {
+      const remaining = Math.max(0, Math.ceil((deadlineRef.current - Date.now()) / 1000))
+      if (remaining === 0) {
+        const completedAt = deadlineRef.current
+        deadlineRef.current = null
+        clearInterval(intervalRef.current)
+        advanceSession(completedAt)
+        return
+      }
+      setTimeLeft(remaining)
+    }
     cancelAlarm()
     setIsRunning(false)
-  }, [])
+  }, [advanceSession])
 
   const reset = useCallback(() => {
     cancelAlarm()
