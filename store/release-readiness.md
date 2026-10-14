@@ -4,7 +4,7 @@ Prepared 14 October 2026. **No artifact has been uploaded to Google Play.**
 
 ## Build identity
 
-- Application ID: `com.pomodoro.app` (existing project identity; pending owner confirmation before first upload)
+- Application ID: `com.pomodoro.app` (confirmed by the user before first upload)
 - Version name: `1.0`; version code: `1`
 - Minimum SDK: 23; compile/target SDK: 36
 - Existing local signing key reused; no credentials generated or committed
@@ -36,15 +36,17 @@ Build, lint, test, dependency-audit, signing and metadata evidence is in the loc
 
 ## Play handoff
 
-The connected Chrome account chooser offers only `hannan.nozari@gmail.com`. Opening Play Console under that account redirects to developer-account signup. Cloudzy developer-account access has not been verified.
+The user approved the permanent package `com.pomodoro.app` and the disclosed [Play Console terms](https://play.google/console/terms-of-service/). Those terms were accepted under `hannan.nozari@gmail.com`. Reopening the exact requested Cloudzy organization link afterward still redirects that Gmail session to developer-account signup, so existing Cloudzy access is not verified.
+
+Google sign-in reported that it could not find the supplied office account. Google account notices identified the user's company email as another candidate. That sign-in reached Google's identity-verification challenge, and the offered alternative ended with 'Couldn't sign you in'. Manual sign-in using the Google account that already has Cloudzy developer access is required. No credentials were entered or recovered by the agent.
 
 1. Sign in to the existing developer account with app creation/upload authority at [Play Console](https://play.google.com/console). Do not send passwords in chat.
-2. Confirm the permanent package selection. The existing build uses `com.pomodoro.app`; `com.hannannozari.pomodoro` is an alternative that requires changing/rebuilding the package before first upload. Once an artifact is uploaded, its package is fixed.
+2. Use the confirmed permanent package `com.pomodoro.app`. Do not rename it or ask for the same package approval again. Once an artifact is uploaded, its package is fixed.
 3. Inspect the existing app, upload certificate, used version codes, and Play App Signing enrollment before uploading. Version code 1 is provisional until Console confirms it is unused for this app.
 4. Prepare and roll out an **Internal testing** release only. Stop for user approval if a new signing agreement, security-sensitive API access, or a fee is required. No service-account/API credentials have been created.
 5. Confirm the configured tester access and obtain the actual opt-in link. Follow processing/review status until the track's outcome is visible. Do not equate a successful upload with publication.
 
-No Play app/listing, tester list, content/audience/data-safety declaration, signing agreement or public production release was created or submitted. Intended audience and a hosted privacy-policy URL have not been confirmed; internal testing may be started before full listing setup according to Google's guidance.
+No Play app/listing, tester list, content/audience/data-safety declaration, Play App Signing agreement or public production release was created or submitted. Only the specifically approved Play Console terms were accepted. Intended audience and a hosted privacy-policy URL have not been confirmed; internal testing may be started before full listing setup according to Google's guidance.
 
 ## Limits
 
