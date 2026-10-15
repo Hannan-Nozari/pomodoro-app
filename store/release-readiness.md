@@ -1,10 +1,10 @@
 # Android internal testing release readiness
 
-Updated 15 October 2026. **No artifact has been uploaded to Google Play.**
+Updated 15 October 2026. **The Play app entry is created; no artifact has been uploaded.**
 
 ## Build identity
 
-- Proposed application ID: `com.cloudzy.pomodoro` (available in Play Console; user approval pending). The originally approved `com.pomodoro.app` is already in use and cannot be registered for this app.
+- Application ID: `com.cloudzy.pomodoro` (availability verified, explicitly approved by the user, and Play app entry created). The original `com.pomodoro.app` is already in use and cannot be registered for this app.
 - Version name: `1.0`; version code: `1`
 - Minimum SDK: 23; compile/target SDK: 36
 - Existing local signing key reused; no credentials generated or committed
@@ -38,15 +38,14 @@ Build, lint, test, dependency-audit, signing and metadata evidence is in the loc
 
 Developer account access is now verified against the user-supplied organization ID. With explicit action-time user approval, the invitation and its Developer Distribution Agreement confirmation were accepted on 15 October 2026. The existing membership includes draft app creation, testing releases, tester management, and Play App Signing. No permissions were edited. Detailed membership evidence stays in the local, git-ignored `release/` directory.
 
-The account has no existing apps. On the new-app form, Play Console rejected the original package `com.pomodoro.app` as already in use. It confirmed **Package name available** for the proposed replacement `com.cloudzy.pomodoro`. The local project and signed artifacts have been prepared with the replacement, but its permanent selection has not yet been approved. Original-package artifacts remain archived locally in `release/original-com.pomodoro.app/`.
+Play Console rejected the original package `com.pomodoro.app` as already in use and confirmed **Package name available** for `com.cloudzy.pomodoro`. The user explicitly approved that permanent replacement and the app-creation signing/policy/export declarations. The **Pomodoro Timer**, English (United States), App, Free entry was then created successfully. Original-package artifacts remain archived locally in `release/original-com.pomodoro.app/`.
 
-1. Obtain user approval of the replacement permanent package `com.cloudzy.pomodoro`.
-2. The prepared **Pomodoro Timer**, English (United States), App, Free form requires separate [Play App Signing Terms](https://play.google/play-app-signing-terms/), Developer Program Policies, and US export-compliance confirmations. These remain unchecked and unsubmitted. Approval was requested with Google-generated/held app signing keys disclosed; the existing local signing key will be the upload key. Google-managed app signing keys cannot be exported.
-3. After approval, create the app, inspect signing enrollment and register the upload certificate before the first upload. The package availability check does not reserve a name.
-4. Prepare and roll out an **Internal testing** release only. No service-account/API credentials have been created. Do not accept further materially different agreements, create security-sensitive API access, or incur fees without approval.
-5. Configure tester access and obtain the actual opt-in link. Follow processing/review status until the track's outcome is visible. Do not equate a successful upload with publication.
+1. Resume the existing app's Internal testing track. Chrome currently reports that another extension UI is open and blocks browser actions; the user must dismiss that popup before automation continues. The initial tester-list dialog is open, but its contents/save have not been confirmed.
+2. The [Play App Signing Terms](https://play.google/play-app-signing-terms/), Developer Program Policies, and US export-compliance confirmations were submitted with explicit user approval during app creation. Approval includes Google generating/holding the app signing key; the private key cannot be exported. Inspect the resulting signing configuration and register/verify the existing local upload certificate before the first upload. Do not ask for the same package or agreement approval again.
+3. Prepare and roll out an **Internal testing** release only. No service-account/API credentials have been created. Do not accept further materially different agreements, create security-sensitive API access, or incur fees without approval.
+4. Configure the user as the initial tester and obtain the actual opt-in link. Follow processing/review status until the track's outcome is visible. Do not equate a successful upload with publication.
 
-No Play app/listing, tester list, content/audience/data-safety declaration, Play App Signing agreement or public production release was created or submitted. The specifically approved Console terms and invitation's DDA confirmation were accepted. Intended audience and a hosted privacy-policy URL have not been confirmed; internal testing may be started before full listing setup according to Google's guidance.
+The app entry and approved app-creation declarations are submitted. No tester list save, artifact upload, release rollout, store listing, audience/data-safety declaration, or production release is confirmed. Intended audience and a hosted privacy-policy URL have not been confirmed; internal testing may be started before full listing setup according to Google's guidance.
 
 ## Limits
 

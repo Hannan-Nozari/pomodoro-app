@@ -95,10 +95,10 @@ requires it to load the bundled local assets.
 
 ### Before the first upload
 
-- **The application ID is permanent.** The proposed replacement is
+- **The application ID is permanent.** The approved application ID is
   `com.cloudzy.pomodoro`; Play Console confirmed it available on 15 October 2026,
-  while the original `com.pomodoro.app` is already in use. User approval of the
-  replacement is pending before app creation or upload. It cannot be
+  while the original `com.pomodoro.app` is already in use. The user approved the
+  replacement and its Play app entry was created. It cannot be
   changed after the first artifact upload — a different ID means a new listing with no
   installs or reviews. Change it in `android/app/build.gradle`,
   `android/app/src/main/res/values/strings.xml` and `capacitor.config.json`.
