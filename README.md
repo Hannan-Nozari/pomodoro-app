@@ -95,8 +95,10 @@ requires it to load the bundled local assets.
 
 ### Before the first upload
 
-- **The application ID is permanent.** It is currently `com.pomodoro.app`
-  (from the existing project, availability not yet confirmed in Console). It cannot be
+- **The application ID is permanent.** The proposed replacement is
+  `com.cloudzy.pomodoro`; Play Console confirmed it available on 15 October 2026,
+  while the original `com.pomodoro.app` is already in use. User approval of the
+  replacement is pending before app creation or upload. It cannot be
   changed after the first artifact upload — a different ID means a new listing with no
   installs or reviews. Change it in `android/app/build.gradle`,
   `android/app/src/main/res/values/strings.xml` and `capacitor.config.json`.

@@ -1,4 +1,4 @@
-package com.pomodoro.app;
+package com.cloudzy.pomodoro;
 
 import com.getcapacitor.BridgeActivity;
 

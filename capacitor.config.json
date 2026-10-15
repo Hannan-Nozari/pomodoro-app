@@ -1,5 +1,5 @@
 {
-  "appId": "com.pomodoro.app",
+  "appId": "com.cloudzy.pomodoro",
   "appName": "Pomodoro Timer",
   "webDir": "dist",
   "server": {

@@ -1,4 +1,4 @@
-package com.pomodoro.app;
+package com.cloudzy.pomodoro;
 
 import static org.junit.Assert.*;
 
@@ -23,11 +23,15 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class ReleaseRuntimeTest {
     private ActivityScenario<MainActivity> scenario;
+    private MainActivity activity;
 
     private String js(String expression) throws Exception {
         AtomicReference<String> result = new AtomicReference<>();
         CountDownLatch ready = new CountDownLatch(1);
-        scenario.onActivity(activity -> activity.getBridge().getWebView().evaluateJavascript(
+        // ActivityScenario.onActivity waits for the entire main queue to be idle.
+        // A resumed WebView can keep posting frames; enqueue this bounded probe
+        // directly instead, so rendering cannot stall the test indefinitely.
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> activity.getBridge().getWebView().evaluateJavascript(
             expression, value -> { result.set(value); ready.countDown(); }
         ));
         assertTrue("WebView result timed out", ready.await(10, TimeUnit.SECONDS));
@@ -60,7 +64,7 @@ public class ReleaseRuntimeTest {
         fail("Expected " + count + " pending notifications");
     }
 
-    @Test
+    @Test(timeout = 120_000)
     @SdkSuppress(minSdkVersion = 33)
     public void releaseBridgeSchedulesCancelsAndDeliversBackgroundAlert() throws Exception {
         Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
@@ -70,8 +74,10 @@ public class ReleaseRuntimeTest {
         }
         NotificationManager manager = context.getSystemService(NotificationManager.class);
         manager.cancelAll();
-        try (ActivityScenario<MainActivity> opened = ActivityScenario.launch(MainActivity.class)) {
+        ActivityScenario<MainActivity> opened = ActivityScenario.launch(MainActivity.class);
+        try {
             scenario = opened;
+            scenario.onActivity(current -> activity = current);
             waitFor("document.querySelector('[aria-label=\"Start timer\"]') !== null");
             assertEquals("true", js("window.Capacitor.isNativePlatform()"));
             nativePromise("window.Capacitor.Plugins.LocalNotifications.cancel({notifications:[{id:1}]})");
@@ -122,6 +128,13 @@ public class ReleaseRuntimeTest {
             assertEquals("1", js("JSON.parse(localStorage.getItem('pomo_history')).length"));
             assertEquals(deadline, js("JSON.parse(localStorage.getItem('pomo_history'))[0].id"));
             assertEquals("false", js("!!document.querySelector('[aria-label=\"Pause timer\"]')"));
+        } finally {
+            // Finish before ActivityScenario's idle wait, so WebView animation
+            // callbacks cannot keep teardown waiting after all assertions pass.
+            if (activity != null) {
+                InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> activity.finish());
+            }
+            opened.close();
         }
     }
 }

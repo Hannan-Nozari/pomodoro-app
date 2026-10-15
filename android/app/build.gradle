@@ -26,11 +26,11 @@ tasks.configureEach {
 }
 
 android {
-    namespace "com.pomodoro.app"
+    namespace "com.cloudzy.pomodoro"
     compileSdk rootProject.ext.compileSdkVersion
     testBuildType project.hasProperty('testRelease') ? 'release' : 'debug'
     defaultConfig {
-        applicationId "com.pomodoro.app"
+        applicationId "com.cloudzy.pomodoro"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
