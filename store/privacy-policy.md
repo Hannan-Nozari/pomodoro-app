@@ -15,8 +15,8 @@ storage inside the app:
 - a rolling history of up to 50 completed focus sessions
 - the state of a session that is currently running, so it can be resumed
 
-This information never leaves your device. It is not uploaded, backed up to any
-service we control, or shared with anyone. Uninstalling the app deletes it, and
+The app does not upload or share this information. Android cloud backups and
+device-to-device transfer of app data are excluded by the app’s backup rules. Uninstalling the app deletes it, and
 "Clear all" in the session history clears that history immediately.
 
 ## What the app does not do
@@ -38,8 +38,8 @@ service we control, or shared with anyone. Uninstalling the app deletes it, and
 
 ## Children
 
-The app is suitable for all ages and collects no data from anyone, including
-children.
+The app does not collect personal data. The intended age audience must be
+confirmed by the developer before submitting the Play audience declaration.
 
 ## Changes
 

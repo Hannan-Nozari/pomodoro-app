@@ -11,36 +11,38 @@ device.
 ## Development
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
 ## Android
 
 The Android project lives in `android/` (Capacitor). Building it needs JDK 21
-and the Android SDK (platform 35, build-tools 35).
+and the Android SDK (platform 36, build-tools 35).
 
 ```bash
-npm run build && npx cap sync android
-cd android && ./gradlew assembleRelease
+npm test
+npm run android:release
 ```
 
 Outputs:
 
 | Artifact | Path |
 | --- | --- |
-| APK (sideload / direct download) | `android/app/build/outputs/apk/release/app-release.apk` |
-| AAB (Play Store upload) | `android/app/build/outputs/bundle/release/app-release.aab` — `./gradlew bundleRelease` |
+| APK (sideload / direct download) | `release/pomodoro-1.0-v2.apk` |
+| AAB (Play Store upload) | `release/pomodoro-1.0-v2.aab` |
 
 ### Signing
 
 Release builds are signed with the keystore described in
 `android/keystore.properties`. That file and the `.jks` are git-ignored and are
-**not** reproducible — losing them means never being able to update the app on
-the Play Store under the same listing. Back both up somewhere durable.
+**not** reproducible. Back both up somewhere durable and private. With Play App
+Signing, Google holds the app signing key and this local key can serve as the
+upload key; a lost upload key can be reset through Play Console. A directly
+distributed APK still needs its original signing key for updates.
 
-Without `keystore.properties` present the release build still succeeds, but the
-output is unsigned.
+Release builds fail if `keystore.properties` or its keystore is missing. Debug
+builds use the normal Android debug key. Never commit signing credentials.
 
 ### Timing behaviour
 
@@ -55,20 +57,21 @@ Bumping a release: raise `versionCode` and `versionName` in
 
 ## Publishing to Google Play
 
-The build is configured for Play's current requirements: `targetSdk` 36 (required
-for new apps since 31 August 2026), a signed AAB, R8 + resource shrinking, and a
-release build that is not debuggable.
+The build uses `minSdk` 24 (Android 7.0) for [Play automatic protection](https://support.google.com/googleplay/android-developer/answer/10183279),
+`targetSdk` 36, a signed AAB, R8 + resource shrinking, and a release build that is
+not debuggable.
 
-Upload `android/app/build/outputs/bundle/release/app-release.aab`. The listing
+Upload `release/pomodoro-1.0-v2.aab`. Version code 2 replaces the original API 23
+bundle that Play rejected. The listing
 assets and copy live in [`store/`](store/).
 
 ### Exact alarms
 
 The app declares `USE_EXACT_ALARM`. This is a restricted permission, and Play
 limits it to apps whose core function is precisely-timed alerts — alarm, clock
-and timer apps. A focus timer qualifies: the user sets a session length and the
-whole point is that the alert lands at that moment, not some minutes later. The
-Console will ask for a justification; this is the one to give:
+and timer apps. The app’s core function is a user-started focus/break timer. Confirm the current
+Play declaration against that function; approval is decided by Google. A
+proposed justification for review is:
 
 > Pomodoro Timer is a focus timer. The user chooses a session length and the app
 > must alert them at exactly that moment, including while the app is in the
@@ -93,12 +96,50 @@ requires it to load the bundled local assets.
 
 ### Before the first upload
 
-- **The application ID is permanent.** It is currently `com.pomodoro.app`
-  (a Capacitor scaffold default, verified unclaimed on Play). It cannot be
-  changed after the first publish — a different ID means a new listing with no
+- **The application ID is permanent.** The approved application ID is
+  `com.cloudzy.pomodoro`; Play Console confirmed it available on 15 October 2026,
+  while the original `com.pomodoro.app` is already in use. The user approved the
+  replacement and its Play app entry was created. It cannot be
+  changed after the first artifact upload — a different ID means a new listing with no
   installs or reviews. Change it in `android/app/build.gradle`,
   `android/app/src/main/res/values/strings.xml` and `capacitor.config.json`.
 - A privacy policy URL is required by the listing even though nothing is
   collected.
 - New personal developer accounts must run a closed test with 12 opted-in
   testers for 14 consecutive days before the production track unlocks.
+
+### Alert limits
+
+Notifications require the user’s permission. Silent mode keeps the notification
+but uses a silent channel. Android 12–12L uses `SCHEDULE_EXACT_ALARM`; if exact
+alarms are disabled in system settings the plugin uses an inexact fallback.
+Android can defer idle-mode alerts, especially sessions less than nine minutes
+apart. Force-stopping the app in Settings disables its alarms until it is opened
+again. A normal background process kill is supported.
+
+Cloud backup and device transfers of app storage are explicitly excluded, so
+tasks and timer history stay on the device.
+
+### Internal testing
+
+Use the **Internal testing** track only for the prepared release. Confirm the
+permanent package, existing app/track versions, and signing certificate in Play
+Console before the first upload. A successful local build is not evidence of a
+Play upload or rollout. The Console account must have app creation/upload rights.
+Do not create API credentials or accept Play App Signing terms without approval.
+
+Official requirements: [target API](https://developer.android.com/google/play/requirements/target-sdk),
+[internal tests](https://support.google.com/googleplay/android-developer/answer/9845334),
+and [app signing](https://developer.android.com/studio/publish/app-signing).
+
+`npm run android:release` builds from a private temporary copy to exclude macOS
+folder icons from Android resources, then saves the signed artifacts and R8 map
+in `release/`. On this Mac it detects the installed Homebrew JDK 21; elsewhere
+set `JAVA_HOME` to your JDK 21 installation.
+
+To run the Android lifecycle test on an emulator/device:
+
+```bash
+cd android
+./gradlew connectedReleaseAndroidTest -PtestRelease
+```

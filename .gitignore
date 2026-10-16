@@ -19,5 +19,8 @@ android/app/src/main/assets/capacitor.plugins.json
 
 # macOS / IDE noise
 .DS_Store
+Icon?
 .idea/
 *.iml
+*.log
+release/
