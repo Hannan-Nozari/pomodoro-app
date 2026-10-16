@@ -5,7 +5,9 @@ source. Sessions, tasks, and history live in `localStorage` — nothing leaves t
 device.
 
 - 25 / 5 / 15 minute defaults, adjustable, with a long break every 4th session
-- Task list and a rolling 50-entry session history
+- A live countdown in the notification shade while a session runs
+- Four alarm sounds, each previewable from settings
+- Task list, and a rolling 50-entry session history you can annotate
 - End-of-session alert that fires even when the app is backgrounded or killed
 
 ## Development
@@ -49,6 +51,31 @@ ticks, because Android freezes a backgrounded WebView's timers. The same
 deadline is handed to `AlarmManager` (via `@capacitor/local-notifications`) so
 the alert fires without the app running, and is persisted so a killed app
 resumes — or settles a session that ended while it was closed — on next launch.
+
+### The running-timer notification
+
+`OngoingTimerPlugin` posts the countdown as a notification whose timer is drawn
+by Android's own chronometer, given the session's end time. Nothing in
+JavaScript ticks it, which is the point: the WebView is frozen while the app is
+backgrounded, which is exactly when the shade is what the user can see. A
+companion `TimerDoneReceiver` is scheduled for the deadline to clear it, since
+a chronometer left alone would sail on into negative time.
+
+### Alarm sounds
+
+`src/lib/alarm-presets.json` is the single source of truth. The app synthesises
+those tones with the Web Audio API for previews and the in-app chime, and
+`scripts/make-alarm-sounds.py` renders the identical tones to WAVs in
+`res/raw` for the notification channels — so what you preview is what the alert
+plays. Re-run the script after editing the presets:
+
+```bash
+python3 scripts/make-alarm-sounds.py
+```
+
+A notification channel's sound is fixed once created, so each sound has its own
+channel, created on demand. Those WAVs are referenced only by name at runtime,
+so `res/raw/keep.xml` holds them against resource shrinking.
 
 Bumping a release: raise `versionCode` and `versionName` in
 `android/app/build.gradle`.

@@ -13,11 +13,14 @@ Set a session, start it, and put the phone down. The timer is anchored to the cl
 
 WHAT YOU GET
 • A clean focus timer with 25 / 5 / 15 minute defaults
+• A live countdown in your notification shade while a session runs
 • Adjustable session and break lengths, from 1 to 90 minutes
 • A long break automatically after every fourth focus session
 • An end-of-session alert that arrives even when the app is closed
+• Four alarm sounds — chime, bell, beeps or marimba — each one previewable
 • A task list to hold what you are working on
-• A rolling history of the sessions you have finished
+• A rolling history of finished sessions, and a note on each one to record
+  what you actually worked on
 • Picks up exactly where it left off if the app is reopened
 
 PRIVACY
