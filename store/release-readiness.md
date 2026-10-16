@@ -1,6 +1,6 @@
 # Android internal testing release readiness
 
-Updated 16 October 2026. **A signed version-code-2 replacement is ready for manual upload.** The user reported that Play rejected the version-code-1 bundle because automatic protection requires minimum SDK 24; successful upload and internal rollout remain unconfirmed.
+Updated 16 October 2026. **The internal testing track is Active and release `Release1`, version `1.0` / code `2`, is Available to internal testers.** The user uploaded and released the replacement bundle. The single-user tester list was then created, selected, and saved successfully. The opt-in page recognizes the intended Google account and shows its invitation.
 
 ## Build identity
 
@@ -35,18 +35,19 @@ The minimum SDK was raised from 23 to 24 to satisfy Play automatic protection wh
 
 Build, lint, test, dependency-audit, signing and metadata evidence is in the local, git-ignored `release/` directory. Replacement evidence is recorded in `min-sdk-24-validation.json`, `min-sdk-24-build.log`, and the other `min-sdk-24-*.log` files.
 
-## Play handoff
+## Verified Google Play outcome
 
 Developer account access is now verified against the user-supplied organization ID. With explicit action-time user approval, the invitation and its Developer Distribution Agreement confirmation were accepted on 15 October 2026. The existing membership includes draft app creation, testing releases, tester management, and Play App Signing. No permissions were edited. Detailed membership evidence stays in the local, git-ignored `release/` directory.
 
 Play Console rejected the original package `com.pomodoro.app` as already in use and confirmed **Package name available** for `com.cloudzy.pomodoro`. The user explicitly approved that permanent replacement and the app-creation signing/policy/export declarations. The **Pomodoro Timer**, English (United States), App, Free entry was then created successfully. Original-package artifacts remain archived locally in `release/original-com.pomodoro.app/`.
 
-1. The user requested the file for manual upload after repeated Mac/browser disconnects. Upload `release/pomodoro-1.0-v2.aab` into the existing app's Internal testing draft. The reported automatic-protection SDK error is addressed by this bundle's verified minimum SDK of 24.
-2. The [Play App Signing Terms](https://play.google/play-app-signing-terms/), Developer Program Policies, and US export-compliance confirmations were submitted with explicit user approval during app creation. Approval includes Google generating/holding the app signing key; the private key cannot be exported. The existing release draft visibly confirmed that releases are signed by Google Play and automatic protection is enabled. Do not ask for the same package or agreement approval again.
-3. Prepare and roll out an **Internal testing** release only. No service-account/API credentials have been created. Do not accept further materially different agreements, create security-sensitive API access, or incur fees without approval.
-4. Tester setup remains unconfirmed. Automatic approval review blocked creation of the proposed single-user tester list because Google stores lists for reuse across the whole developer account. An explicit clarification was requested; creation must not be retried without that approval or new evidence establishing authorization. Configure the initial tester after resolving it and obtain the actual opt-in link. Follow processing/review status until the track's outcome is visible. Do not equate a successful upload with publication.
+1. The user requested the file for manual upload after repeated Mac/browser disconnects. The first upload was rejected for minimum SDK 23. The replacement was manually uploaded and released: the live release details confirm app bundle `2 (1.0)`, API levels `24+`, target SDK `36`, status **Available to internal testers**, and release time displayed as **Oct 16 2:34 PM**.
+2. The track is **Active**. `Pomodoro internal testers` contains one verified account and is selected for this app's internal track; its selection persisted after navigating away and back. Google stores lists for account-wide reuse, but no other app was selected or changed. The user explicitly requested completion of tester setup after receiving the list-creation steps. Only the intended account was added.
+3. The [testing invitation](https://play.google.com/apps/internaltest/4701148535155828346) was opened under the intended Google account and showed **You're invited to test com.cloudzy.pomodoro (unreviewed)** and **Accept invite**. Invitation acceptance and installation remain user actions on the Android device; no acceptance was submitted by automation. The invitation discloses sharing the tester's email and app-use information with the developer.
+4. [Release details](https://play.google.com/console/u/0/developers/4686045226762172476/app/4975712220361619456/tracks/4701148535155828346/releases/1/details) and [tester configuration](https://play.google.com/console/u/0/developers/4686045226762172476/app/4975712220361619456/tracks/4701148535155828346?tab=testers) are verified. Evidence is saved locally as `release/play-internal-release-available.png`, `release/play-testers-active.png`, and `release/play-internal-release-status.json`.
+5. The [Play App Signing Terms](https://play.google/play-app-signing-terms/), Developer Program Policies, and US export-compliance confirmations were submitted with explicit user approval during app creation. Approval includes Google generating/holding the app signing key; the private key cannot be exported. The release draft visibly confirmed that releases are signed by Google Play and automatic protection is enabled. No service-account/API credentials were created.
 
-The app entry and approved app-creation declarations are submitted. No tester list save, accepted artifact, release rollout, store listing, audience/data-safety declaration, or production release is confirmed. Intended audience and a hosted privacy-policy URL have not been confirmed; internal testing may be started before full listing setup according to Google's guidance.
+This is an **internal testing release only**. Google marks it **Not reviewed** and presents the temporary name `com.cloudzy.pomodoro (unreviewed)` until full app setup and review are complete. No production publication, store-listing completion, or audience/data-safety declaration was performed. Intended audience and a hosted privacy-policy URL have not been confirmed; these are separate work before a broader release.
 
 ## Limits
 
