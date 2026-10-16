@@ -29,8 +29,8 @@ Outputs:
 
 | Artifact | Path |
 | --- | --- |
-| APK (sideload / direct download) | `release/pomodoro-1.0-v1.apk` |
-| AAB (Play Store upload) | `release/pomodoro-1.0-v1.aab` |
+| APK (sideload / direct download) | `release/pomodoro-1.0-v2.apk` |
+| AAB (Play Store upload) | `release/pomodoro-1.0-v2.aab` |
 
 ### Signing
 
@@ -57,11 +57,12 @@ Bumping a release: raise `versionCode` and `versionName` in
 
 ## Publishing to Google Play
 
-The build is configured for Play's current requirements: `targetSdk` 36 (required
-for new apps since 31 August 2026), a signed AAB, R8 + resource shrinking, and a
-release build that is not debuggable.
+The build uses `minSdk` 24 (Android 7.0) for [Play automatic protection](https://support.google.com/googleplay/android-developer/answer/10183279),
+`targetSdk` 36, a signed AAB, R8 + resource shrinking, and a release build that is
+not debuggable.
 
-Upload `release/pomodoro-1.0-v1.aab`. The listing
+Upload `release/pomodoro-1.0-v2.aab`. Version code 2 replaces the original API 23
+bundle that Play rejected. The listing
 assets and copy live in [`store/`](store/).
 
 ### Exact alarms
