@@ -1,0 +1,40 @@
+{
+  "_comment": "Single source of truth for the alarm sounds. The app synthesises these with the Web Audio API for previews and for the in-app chime; scripts/make-alarm-sounds.py renders the identical tones to res/raw WAVs for the Android notification channels. Change them here and re-run that script, or the two will drift apart.",
+  "presets": [
+    {
+      "id": "chime",
+      "name": "Chime",
+      "tones": [
+        { "freq": 880.0, "at": 0.0, "dur": 0.6, "type": "sine", "gain": 0.5 },
+        { "freq": 1318.5, "at": 0.18, "dur": 0.7, "type": "sine", "gain": 0.45 }
+      ]
+    },
+    {
+      "id": "bell",
+      "name": "Bell",
+      "tones": [
+        { "freq": 659.25, "at": 0.0, "dur": 1.5, "type": "sine", "gain": 0.5 },
+        { "freq": 1318.5, "at": 0.0, "dur": 1.1, "type": "sine", "gain": 0.18 },
+        { "freq": 1976.0, "at": 0.0, "dur": 0.8, "type": "sine", "gain": 0.08 }
+      ]
+    },
+    {
+      "id": "beeps",
+      "name": "Beeps",
+      "tones": [
+        { "freq": 988.0, "at": 0.0, "dur": 0.14, "type": "triangle", "gain": 0.45 },
+        { "freq": 988.0, "at": 0.2, "dur": 0.14, "type": "triangle", "gain": 0.45 },
+        { "freq": 988.0, "at": 0.4, "dur": 0.18, "type": "triangle", "gain": 0.45 }
+      ]
+    },
+    {
+      "id": "marimba",
+      "name": "Marimba",
+      "tones": [
+        { "freq": 523.25, "at": 0.0, "dur": 0.3, "type": "triangle", "gain": 0.5 },
+        { "freq": 659.25, "at": 0.13, "dur": 0.3, "type": "triangle", "gain": 0.5 },
+        { "freq": 783.99, "at": 0.26, "dur": 0.5, "type": "triangle", "gain": 0.5 }
+      ]
+    }
+  ]
+}

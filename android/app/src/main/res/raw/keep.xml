@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The notification small icon is resolved by name at runtime (via the
-     Capacitor LocalNotifications smallIcon config), so resource shrinking
-     cannot see the reference and would strip it, leaving Android to fall back
-     to a generic alert glyph. -->
+<!-- These resources are resolved by name at runtime — the notification small
+     icon via the LocalNotifications smallIcon config, and the alarm sounds via
+     the notification channel each session is scheduled on. Resource shrinking
+     cannot see those references and would strip them, leaving a generic alert
+     glyph and the default system sound. -->
 <resources xmlns:tools="http://schemas.android.com/tools"
-    tools:keep="@drawable/ic_stat_pomodoro" />
+    tools:keep="@drawable/ic_stat_pomodoro,@raw/alarm_*" />
