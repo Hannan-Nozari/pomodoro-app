@@ -11,7 +11,8 @@ export default function App() {
     durations, setDurations,
     soundEnabled, setSoundEnabled,
     tasks, addTask, toggleTask, deleteTask,
-    history, clearHistory,
+    history, clearHistory, setSessionNote,
+    alarmSound, setAlarmSound, previewAlarm,
   } = usePomodoro()
 
   return (
@@ -60,6 +61,10 @@ export default function App() {
           onDeleteTask={deleteTask}
           history={history}
           onClearHistory={clearHistory}
+          onSessionNote={setSessionNote}
+          alarmSound={alarmSound}
+          onAlarmSoundChange={setAlarmSound}
+          onPreviewAlarm={previewAlarm}
         />
 
       </main>

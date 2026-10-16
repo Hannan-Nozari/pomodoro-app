@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { scheduleAlarm, cancelAlarm, ensureAlarmPermission } from '../lib/alarm'
+import { showRunning, showPaused, hideOngoing } from '../lib/ongoing'
+import { playAlarm, primeAudio, DEFAULT_ALARM } from '../lib/sounds'
 
 // ─── localStorage helpers ────────────────────────────────────────────────────
 const load = (key, fallback) => {
@@ -30,38 +32,6 @@ export const SESSION_LABELS = {
 // After every N completed work sessions a long break is given
 const LONG_BREAK_INTERVAL = 4
 
-// ─── Simple beep via Web Audio API (no external files needed) ────────────────
-function playBeep(audioCtxRef) {
-  try {
-    // Reuse or create an AudioContext
-    if (!audioCtxRef.current) {
-      audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)()
-    }
-    const ctx = audioCtxRef.current
-
-    // Two quick beeps
-    const beepAt = (startTime) => {
-      const osc  = ctx.createOscillator()
-      const gain = ctx.createGain()
-      osc.connect(gain)
-      gain.connect(ctx.destination)
-      osc.type      = 'sine'
-      osc.frequency.setValueAtTime(880, startTime)          // A5 note
-      gain.gain.setValueAtTime(0.4, startTime)
-      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.3)
-      osc.start(startTime)
-      osc.stop(startTime + 0.3)
-    }
-
-    const now = ctx.currentTime
-    beepAt(now)
-    beepAt(now + 0.4)
-  } catch (err) {
-    // Web Audio API not available — silently ignore
-    console.warn('Audio unavailable:', err)
-  }
-}
-
 // ─── Main hook ───────────────────────────────────────────────────────────────
 export function usePomodoro() {
   // --- Persisted settings ---
@@ -71,6 +41,7 @@ export function usePomodoro() {
     longBreak:  15,
   }))
   const [soundEnabled, setSoundEnabledState] = useState(() => load('pomo_sound', true))
+  const [alarmSound,   setAlarmSoundState]   = useState(() => load('pomo_alarm', DEFAULT_ALARM))
   const [tasks,        setTasksState]        = useState(() => load('pomo_tasks', []))
   const [history,      setHistoryState]      = useState(() => load('pomo_history', []))
 
@@ -115,11 +86,12 @@ export function usePomodoro() {
 
   // Keep a ref so the interval callback always sees the latest values
   const stateRef = useRef({})
-  stateRef.current = { timeLeft, isRunning, sessionType, workCount, sessionNum, durations, soundEnabled, history }
+  stateRef.current = { timeLeft, isRunning, sessionType, workCount, sessionNum, durations, soundEnabled, alarmSound, history }
 
   // ── Persist on change ──────────────────────────────────────────────────────
   useEffect(() => { save('pomo_durations', durations)   }, [durations])
   useEffect(() => { save('pomo_sound',     soundEnabled) }, [soundEnabled])
+  useEffect(() => { save('pomo_alarm',     alarmSound)   }, [alarmSound])
   useEffect(() => { save('pomo_tasks',     tasks)        }, [tasks])
   useEffect(() => { save('pomo_history',   history)      }, [history])
 
@@ -135,9 +107,9 @@ export function usePomodoro() {
   // `completedAt` is when the session actually ran out, which is not always now:
   // a session can expire while the app is closed and only be settled on launch.
   const advanceSession = useCallback((completedAt = Date.now()) => {
-    const { sessionType, workCount, sessionNum, durations, soundEnabled, history } = stateRef.current
+    const { sessionType, workCount, sessionNum, durations, soundEnabled, alarmSound, history } = stateRef.current
 
-    if (soundEnabled) playBeep(audioCtxRef)
+    if (soundEnabled) playAlarm(audioCtxRef, alarmSound)
 
     if (sessionType === SESSION_TYPES.WORK) {
       const newWorkCount = workCount + 1
@@ -171,6 +143,7 @@ export function usePomodoro() {
       setTimeLeft(durations.work * 60)
     }
 
+    hideOngoing()
     setIsRunning(false)
     setIsFinished(true)
   }, [])
@@ -220,7 +193,13 @@ export function usePomodoro() {
 
     // Hand the end time to the OS as well: the alert has to fire even if the
     // WebView is suspended or the app has been killed by then.
-    scheduleAlarm(deadlineRef.current, stateRef.current.sessionType)
+    scheduleAlarm(
+      deadlineRef.current,
+      stateRef.current.sessionType,
+      stateRef.current.alarmSound,
+      stateRef.current.soundEnabled,
+    )
+    showRunning(SESSION_LABELS[stateRef.current.sessionType], deadlineRef.current)
 
     // Re-sync the moment the app comes back to the foreground, so the display
     // is correct immediately instead of at the next tick.
@@ -249,15 +228,10 @@ export function usePomodoro() {
 
   // ── Controls ───────────────────────────────────────────────────────────────
   const start = useCallback(() => {
-    // Create/resume the AudioContext here, while we still have a user gesture —
-    // mobile browsers keep a context created later (at session end) suspended,
-    // which would silence the alarm.
-    try {
-      if (!audioCtxRef.current) {
-        audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)()
-      }
-      if (audioCtxRef.current.state === 'suspended') audioCtxRef.current.resume()
-    } catch {}
+    // Open the audio output here, while we still have a user gesture — mobile
+    // browsers keep a context created later (at session end) suspended, which
+    // would silence the chime.
+    primeAudio(audioCtxRef)
 
     ensureAlarmPermission()
     setIsFinished(false)
@@ -268,11 +242,14 @@ export function usePomodoro() {
   // with it — otherwise it fires for a session the user already stopped.
   const pause = useCallback(() => {
     cancelAlarm()
+    const { sessionType, timeLeft } = stateRef.current
+    showPaused(SESSION_LABELS[sessionType], timeLeft)
     setIsRunning(false)
   }, [])
 
   const reset = useCallback(() => {
     cancelAlarm()
+    hideOngoing()
     setIsRunning(false)
     setIsFinished(false)
     const { durations, sessionType } = stateRef.current
@@ -282,6 +259,7 @@ export function usePomodoro() {
   // Jump directly to a session type (used when editing durations)
   const switchTo = useCallback((type) => {
     cancelAlarm()
+    hideOngoing()
     setIsRunning(false)
     setIsFinished(false)
     setSessionType(type)
@@ -299,6 +277,16 @@ export function usePomodoro() {
 
   const setSoundEnabled = useCallback((val) => {
     setSoundEnabledState(val)
+  }, [])
+
+  const setAlarmSound = useCallback((id) => {
+    setAlarmSoundState(id)
+  }, [])
+
+  /** Play a sound on demand, for the previews in settings. */
+  const previewAlarm = useCallback((id) => {
+    primeAudio(audioCtxRef)
+    playAlarm(audioCtxRef, id)
   }, [])
 
   // ── Task helpers ───────────────────────────────────────────────────────────
@@ -320,6 +308,14 @@ export function usePomodoro() {
 
   const clearHistory = useCallback(() => {
     setHistoryState([])
+  }, [])
+
+  /** Attach (or clear) a note on a finished session. */
+  const setSessionNote = useCallback((id, note) => {
+    const text = note.trim()
+    setHistoryState(prev => prev.map(entry =>
+      entry.id === id ? { ...entry, note: text || undefined } : entry
+    ))
   }, [])
 
   // ── Derived values ─────────────────────────────────────────────────────────
@@ -346,11 +342,12 @@ export function usePomodoro() {
     // Settings
     durations, setDurations,
     soundEnabled, setSoundEnabled,
+    alarmSound, setAlarmSound, previewAlarm,
 
     // Tasks
     tasks, addTask, toggleTask, deleteTask,
 
     // History
-    history, clearHistory,
+    history, clearHistory, setSessionNote,
   }
 }
