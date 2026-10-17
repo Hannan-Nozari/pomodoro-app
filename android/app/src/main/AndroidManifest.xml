@@ -24,6 +24,27 @@
             android:name=".TimerDoneReceiver"
             android:exported="false" />
 
+        <receiver
+            android:name=".AlarmReceiver"
+            android:exported="false" />
+
+        <!-- shortService: this rings for at most 90 seconds, so it needs no
+             broader foreground-service justification. -->
+        <service
+            android:name=".AlarmService"
+            android:exported="false"
+            android:foregroundServiceType="shortService" />
+
+        <activity
+            android:name=".AlarmActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask"
+            android:showOnLockScreen="true"
+            android:turnScreenOn="true"
+            android:taskAffinity=".AlarmActivity"
+            android:theme="@style/AppTheme.NoActionBar" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -43,4 +64,12 @@
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <!-- Re-arm a pending session alert after a reboot. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- The alarm has to wake the screen and ring out loud, not sit silently in
+         the shade: a full-screen intent shows AlarmActivity over the lock
+         screen, and a short foreground service plays the sound. -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SHORT_SERVICE" />
 </manifest>

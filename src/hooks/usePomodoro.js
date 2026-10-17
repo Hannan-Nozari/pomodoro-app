@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { scheduleAlarm, cancelAlarm, ensureAlarmPermission } from '../lib/alarm'
+import { scheduleAlarm, cancelAlarm, ensureAlarmPermission, stopRinging } from '../lib/alarm'
 import { showRunning, showPaused, hideOngoing } from '../lib/ongoing'
 import { playAlarm, primeAudio, DEFAULT_ALARM } from '../lib/sounds'
 
@@ -159,6 +159,8 @@ export function usePomodoro() {
       ? restoredRemaining <= 0
       : restored?.timeLeft === 0
     if (expired) {
+      // The user is looking at the app now, so stop the alarm ringing.
+      stopRinging()
       // Log it at the deadline it actually reached, not at app launch.
       advanceSession(restored?.deadline ?? Date.now())
     }
@@ -234,6 +236,7 @@ export function usePomodoro() {
     primeAudio(audioCtxRef)
 
     ensureAlarmPermission()
+    stopRinging()
     setIsFinished(false)
     setIsRunning(true)
   }, [])

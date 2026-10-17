@@ -1,9 +1,12 @@
-import { Capacitor } from '@capacitor/core'
+import { Capacitor, registerPlugin } from '@capacitor/core'
 import { LocalNotifications } from '@capacitor/local-notifications'
-import { DEFAULT_ALARM, presetName, soundFileFor } from './sounds'
+import { DEFAULT_ALARM, soundFileFor } from './sounds'
 
-// A single reused id — there is only ever one session running.
-const ALARM_ID = 1
+// Native alarm: AlarmManager.setAlarmClock plus a foreground service that rings
+// through the alarm stream behind a full-screen intent. A scheduled
+// notification cannot do this — it plays once at notification volume and never
+// wakes the screen, so a finished session was easy to sleep through.
+const NativeAlarm = registerPlugin('Alarm')
 
 const isNative = Capacitor.isNativePlatform()
 
@@ -53,75 +56,32 @@ const COPY = {
   longBreak:  { title: 'Long break over',        body: 'Ready for the next focus session?' },
 }
 
-// Android freezes a channel's sound when the channel is created, so each alarm
-// sound gets its own channel. They are created on demand and remembered, since
-// createChannel is a no-op for one that already exists but still a bridge call.
-const readyChannels = new Set()
-
-async function channelFor(soundId, soundEnabled) {
-  const id = soundEnabled ? `alarm_${soundId}` : 'alarm_silent'
-  if (readyChannels.has(id)) return id
-  try {
-    await LocalNotifications.createChannel({
-      id,
-      name: soundEnabled ? `Session alert · ${presetName(soundId)}` : 'Session alert · silent',
-      description: 'Fires when a focus session or break ends',
-      importance: 5,
-      visibility: 1,
-      sound: soundEnabled ? `${soundFileFor(soundId)}.wav` : 'alarm_silent.wav',
-      vibration: soundEnabled,
-    })
-    readyChannels.add(id)
-  } catch (err) {
-    console.warn('Could not create the notification channel:', err)
-    return undefined
-  }
-  return id
-}
-
 /**
- * Schedule the end-of-session alert. The OS fires this even when the app is
- * backgrounded or killed, which the in-page beep cannot do — a WebView that
+ * Schedule the end-of-session alarm. The OS fires this even when the app is
+ * backgrounded or killed, which the in-page chime cannot do — a WebView that
  * isn't running plays no sound.
  */
 export async function scheduleAlarm(fireAt, sessionType, soundId = DEFAULT_ALARM, soundEnabled = true) {
   if (!isNative) return
   const epoch = ++alarmEpoch
-  // Wait out the permission prompt: scheduling while it is still pending is
-  // rejected, and the session would silently end with no alert.
+  // Wait out the permission prompt: the alarm screen is a notification with a
+  // full-screen intent, so it needs notification permission to appear.
   const granted = await ensureAlarmPermission()
   if (!granted) return
   // The session may have been paused, reset or replaced while we waited.
   if (epoch !== alarmEpoch || fireAt <= Date.now()) return
+
   const { title, body } = COPY[sessionType] ?? COPY.work
-  const channelId = await channelFor(soundId, soundEnabled)
-  // The prompt and channel creation are both awaits; re-check before committing.
-  if (epoch !== alarmEpoch) return
   try {
-    await clearScheduled()
-    await LocalNotifications.schedule({
-      notifications: [{
-        id: ALARM_ID,
-        title,
-        body,
-        channelId,
-        // allowWhileIdle so Doze doesn't hold the alert until the phone wakes.
-        schedule: { at: new Date(fireAt), allowWhileIdle: true },
-      }],
+    await NativeAlarm.schedule({
+      at: fireAt,
+      title,
+      body,
+      // A silent choice still rings the screen; it just picks the quiet file.
+      sound: soundEnabled ? soundFileFor(soundId) : 'alarm_silent',
     })
   } catch (err) {
     console.warn('Could not schedule alarm:', err)
-  }
-}
-
-// Withdraw the queued alert without touching the epoch — used when replacing one
-// schedule with another, where invalidating the live request would cancel the
-// very alarm being set.
-async function clearScheduled() {
-  try {
-    await LocalNotifications.cancel({ notifications: [{ id: ALARM_ID }] })
-  } catch {
-    // Nothing scheduled — not an error.
   }
 }
 
@@ -129,5 +89,19 @@ export async function cancelAlarm() {
   if (!isNative) return
   // Invalidate any schedule still waiting on the permission prompt.
   alarmEpoch++
-  await clearScheduled()
+  try {
+    await NativeAlarm.cancel()
+  } catch {
+    // Nothing scheduled — not an error.
+  }
+}
+
+/** Silence an alarm that is ringing right now. */
+export async function stopRinging() {
+  if (!isNative) return
+  try {
+    await NativeAlarm.stopRinging()
+  } catch {
+    // Nothing ringing — not an error.
+  }
 }
