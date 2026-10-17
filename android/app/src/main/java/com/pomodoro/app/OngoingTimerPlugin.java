@@ -101,10 +101,8 @@ public class OngoingTimerPlugin extends Plugin {
             // The system redraws this every second on its own.
             builder.setWhen(deadline)
                    .setShowWhen(true)
-                   .setUsesChronometer(true);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                builder.setChronometerCountDown(true);
-            }
+                   .setUsesChronometer(true)
+                   .setChronometerCountDown(true);
             if (!detail.isEmpty()) builder.setContentText(detail);
         } else {
             // Paused: a live chronometer would keep counting, so show the frozen

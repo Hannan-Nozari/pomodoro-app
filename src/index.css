@@ -1,6 +1,15 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/* Tailwind 4 is configured in CSS. These were theme.extend in the old
+   tailwind.config.js; the utilities they generate (bg-tomato, text-tomato,
+   font-mono …) are unchanged. */
+@theme {
+  --color-tomato: #E05252;
+  --color-tomato-dark: #C43E3E;
+  --color-tomato-light: #F5DADA;
+  --color-tomato-lighter: #FDF4F4;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
 
 /* Smooth transitions for the progress ring and panel */
 @layer utilities {
