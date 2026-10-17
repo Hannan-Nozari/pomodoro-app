@@ -16,7 +16,8 @@ WHAT YOU GET
 • A live countdown in your notification shade while a session runs
 • Adjustable session and break lengths, from 1 to 90 minutes
 • A long break automatically after every fourth focus session
-• An end-of-session alert that arrives even when the app is closed
+• A real alarm when time is up: your screen wakes and the alarm sounds, even
+  with the app closed and the phone in your pocket
 • Four alarm sounds — chime, bell, beeps or marimba — each one previewable
 • A task list to hold what you are working on
 • A rolling history of finished sessions, and a note on each one to record

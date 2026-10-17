@@ -6,6 +6,8 @@ device.
 
 - 25 / 5 / 15 minute defaults, adjustable, with a long break every 4th session
 - A live countdown in the notification shade while a session runs
+- A real alarm at the end: the screen wakes, a full-screen alert appears over
+  the lock screen, and the sound plays twice through the alarm stream
 - Four alarm sounds, each previewable from settings
 - Task list, and a rolling 50-entry session history you can annotate
 - End-of-session alert that fires even when the app is backgrounded or killed
@@ -20,7 +22,7 @@ npm run dev
 ## Android
 
 The Android project lives in `android/` (Capacitor). Building it needs JDK 21
-and the Android SDK (platform 35, build-tools 35).
+and the Android SDK (platform 37, build-tools 37).
 
 ```bash
 npm run build && npx cap sync android
@@ -61,6 +63,24 @@ backgrounded, which is exactly when the shade is what the user can see. A
 companion `TimerDoneReceiver` is scheduled for the deadline to clear it, since
 a chronometer left alone would sail on into negative time.
 
+### The end-of-session alarm
+
+A notification is not an alarm: it plays once, on the notification stream at
+notification volume, and never wakes the screen — so a finished session was
+easy to miss entirely. The alert is therefore native:
+
+- `AlarmPlugin` schedules it with `AlarmManager.setAlarmClock()`, which is
+  exempt from Doze deferral and registers in the system's next-alarm indicator
+- `AlarmService` plays the chosen sound through `USAGE_ALARM`, so it follows the
+  alarm volume and is heard over a lowered ringer, and vibrates
+- the notification carries a full-screen intent, which turns the display on and
+  shows `AlarmActivity` over the lock screen
+- it rings twice and falls silent; the alarm screen stays up until dismissed
+
+`USE_FULL_SCREEN_INTENT` is declared for that alert, and the ringing service is
+a `shortService` foreground service, which needs no further justification
+because it runs for seconds.
+
 ### Alarm sounds
 
 `src/lib/alarm-presets.json` is the single source of truth. The app synthesises
@@ -82,9 +102,15 @@ Bumping a release: raise `versionCode` and `versionName` in
 
 ## Publishing to Google Play
 
-The build is configured for Play's current requirements: `targetSdk` 36 (required
-for new apps since 31 August 2026), a signed AAB, R8 + resource shrinking, and a
-release build that is not debuggable.
+The build targets `targetSdk` 36, which is what Play requires of new apps as of
+31 August 2026. `compileSdk` is 37, so the app is built against the newest SDK.
+Targeting 37 is a one-line change in `android/variables.gradle`, held back only
+because the Android 17 emulator image crashes on launch (a null dereference in
+the emulator's own address-space device), so that target cannot be verified at
+runtime here — do it once you can run it on an Android 17 device.
+
+It ships as a signed AAB with R8 and resource shrinking, and the release build
+is not debuggable. `minSdk` is 24 (Android 7.0), Capacitor 8's baseline.
 
 Upload `android/app/build/outputs/bundle/release/app-release.aab`. The listing
 assets and copy live in [`store/`](store/).
