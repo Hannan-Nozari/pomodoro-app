@@ -91,6 +91,7 @@ export default function Timer({
   isRunning,
   isFinished,
   progress,
+  activeTask,
   onStart,
   onPause,
   onReset,
@@ -135,6 +136,14 @@ export default function Timer({
           </span>
         </div>
       </div>
+
+      {/* What this session is going towards */}
+      {activeTask && (
+        <p className="text-sm text-gray-500 text-center -mt-2 px-4 truncate max-w-full">
+          <span className="text-gray-400">on</span>{' '}
+          <span className="font-medium text-gray-600">{activeTask.text}</span>
+        </p>
+      )}
 
       {/* Session counter */}
       <p className="text-sm text-gray-400">

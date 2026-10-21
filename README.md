@@ -6,10 +6,18 @@ device.
 
 - 25 / 5 / 15 minute defaults, adjustable, with a long break every 4th session
 - A live countdown in the notification shade while a session runs
-- A real alarm at the end: the screen wakes, a full-screen alert appears over
-  the lock screen, and the sound plays twice through the alarm stream
+- A choice of how a session ends: ring like an alarm (screen wakes, heard on
+  silent), a plain notification that follows silent mode, or vibrate only — and
+  with headphones in, the sound plays in your headphones
 - Four alarm sounds, each previewable from settings
-- Task list, and a rolling 50-entry session history you can annotate
+- Task list: pick what you are focusing on, and each session is logged against it
+- A weekly summary — hours focused, day-by-day bars, your peak hour, streak,
+  and time per task — all derived from the history already on the device
+- Optional Do Not Disturb for the length of a focus session, lifted automatically
+  on a pause, a break, or the end of the session (alarms still ring through it)
+- A home-screen widget and a Quick Settings tile that count the session down and
+  start one with a tap
+- A rolling session history you can annotate
 - End-of-session alert that fires even when the app is backgrounded or killed
 
 ## Development
@@ -56,30 +64,90 @@ resumes — or settles a session that ended while it was closed — on next laun
 
 ### The running-timer notification
 
-`OngoingTimerPlugin` posts the countdown as a notification whose timer is drawn
-by Android's own chronometer, given the session's end time. Nothing in
-JavaScript ticks it, which is the point: the WebView is frozen while the app is
-backgrounded, which is exactly when the shade is what the user can see. A
-companion `TimerDoneReceiver` is scheduled for the deadline to clear it, since
-a chronometer left alone would sail on into negative time.
+The notification shows the session counting down, the task it is counting
+towards, a progress bar, and Pause / Resume / Reset. It is built in
+`TimerNotification` from `TimerState`, not from anything the page passes at the
+time, because almost everything that redraws it happens while the WebView is
+frozen.
 
-### The end-of-session alarm
+Three different clocks make it work, each for the part it can actually do:
 
-A notification is not an alarm: it plays once, on the notification stream at
-notification volume, and never wakes the screen — so a finished session was
-easy to miss entirely. The alert is therefore native:
+- the countdown is Android's own chronometer, given the end time — it ticks
+  every second for free, with nothing of ours running
+- the progress bar is redrawn by a one-minute `RTC` (non-wakeup) alarm, aligned
+  to the minute of the countdown rather than a minute from now; it never wakes
+  a sleeping phone to move a bar nobody can see
+- `TimerDoneReceiver` clears the whole thing at the deadline, since a
+  chronometer left alone would sail on into negative time
+- `BootReceiver` rebuilds the alarm and the notification after a reboot or an
+  app update, both of which wipe every alarm the app had scheduled
 
-- `AlarmPlugin` schedules it with `AlarmManager.setAlarmClock()`, which is
-  exempt from Doze deferral and registers in the system's next-alarm indicator
-- `AlarmService` plays the chosen sound through `USAGE_ALARM`, so it follows the
-  alarm volume and is heard over a lowered ringer, and vibrates
-- the notification carries a full-screen intent, which turns the display on and
-  shows `AlarmActivity` over the lock screen
-- it rings twice and falls silent; the alarm screen stays up until dismissed
+Pause and Resume take effect in `TimerActionReceiver` immediately — cancelling
+and re-arming the alarm themselves — because the shade is precisely where the
+app is not running. The web layer still owns the timer: what happened is left
+in `TimerState` as a pending action, and it reconciles on launch, on return to
+the foreground, and the moment the native side says a button was pressed.
+That last signal is needed because pulling the shade down over the app does not
+hide the page, so there is no visibility change to react to.
 
-`USE_FULL_SCREEN_INTENT` is declared for that alert, and the ringing service is
-a `shortService` foreground service, which needs no further justification
-because it runs for seconds.
+### The end-of-session alert
+
+The user picks how a finished session announces itself, and `AlarmService`
+plays all three, because a notification channel can't do any of them well — it
+plays once, at notification volume, can't choose its output, and a channel's
+sound is fixed for good once created.
+
+| Style | Sound | Screen | Scheduled with |
+| --- | --- | --- | --- |
+| Ring like an alarm | alarm volume, heard on silent, plays twice | full-screen alert over the lock screen | `setAlarmClock()` — Doze-exempt, in the next-alarm indicator |
+| Notification | notification volume, follows the ringer: silent is silent, vibrate only buzzes | heads-up notification | exact `setExactAndAllowWhileIdle()` |
+| Vibrate only | none | heads-up notification | same |
+
+Only the alarm style registers as an alarm clock: that is what puts the clock
+icon in the status bar, which someone who chose a quiet ending didn't ask for.
+The quiet styles leave their notification in the shade like any message; the
+alarm's clears when it is dismissed.
+
+**Headphones.** On many phones — Samsung's among them — the alarm stream plays
+on the phone's speaker even with Bluetooth headphones connected, so someone
+wearing earbuds heard nothing. When a headset is connected (Bluetooth, BLE
+audio, wired, USB, hearing aid) the sound is played on the media route instead,
+which is where the headphones are, with the device set as preferred output. Every
+style also takes transient audio focus, so music in the headphones pauses for
+the alert and resumes after.
+
+`USE_FULL_SCREEN_INTENT` is declared for the alarm style's alert, and the
+service is a `shortService` foreground service, which needs no further
+justification because it runs for seconds.
+
+### Do Not Disturb
+
+`FocusModePlugin` switches Android's own interruption filter rather than
+reimplementing quiet hours, and uses `INTERRUPTION_FILTER_PRIORITY`, not `NONE`,
+so the end-of-session alarm is still heard. Notification-policy access is
+granted by the user on a system screen and can be revoked at any time, so every
+call degrades to a no-op when it is missing.
+
+Lifting the filter is native, in `FocusMode`, because the moment it has to be
+lifted is one the web layer is often not alive for: the session ends on an
+alarm, and the shade's own Pause and Reset take effect with nothing of the app
+running. Leaving that to JavaScript left the phone silenced until the app was
+next opened. The app only ever undoes its own silencing — a flag records
+whether this app is what turned the filter on, so a Do Not Disturb the user set
+for themselves is left alone.
+
+### The widget and the Quick Settings tile
+
+Both are drawn by the system while the app is asleep and cannot read its
+`localStorage`, so `TimerState` mirrors the three fields they need — running,
+deadline, label — into `SharedPreferences` whenever the ongoing notification is
+updated. The widget's countdown is a `Chronometer` driven from the deadline, the
+same trick as the notification, so it keeps time without anything running.
+
+Neither can run the timer itself. Tapping an idle widget or tile parks a request
+in that same store and opens the app, which picks it up on launch and on every
+return to the foreground; tapping a running one only opens the app, so a stray
+tap cannot cancel a session.
 
 ### Alarm sounds
 

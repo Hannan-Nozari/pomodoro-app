@@ -9,10 +9,11 @@ export default function App() {
     isRunning, isFinished, progress,
     start, pause, reset, switchTo,
     durations, setDurations,
-    soundEnabled, setSoundEnabled,
-    tasks, addTask, toggleTask, deleteTask,
+    alertStyle, setAlertStyle, soundEnabled, nativeAlerts,
+    tasks, addTask, toggleTask, deleteTask, activeTaskId, setActiveTask, activeTask,
     history, clearHistory, setSessionNote,
     alarmSound, setAlarmSound, previewAlarm,
+    dndEnabled, setDndEnabled, dndGranted, dndSupported, requestDndAccess,
   } = usePomodoro()
 
   return (
@@ -40,6 +41,7 @@ export default function App() {
           isRunning={isRunning}
           isFinished={isFinished}
           progress={progress}
+          activeTask={activeTask}
           onStart={start}
           onPause={pause}
           onReset={reset}
@@ -53,12 +55,21 @@ export default function App() {
         <AdvancedPanel
           durations={durations}
           onDurationsChange={setDurations}
+          alertStyle={alertStyle}
+          onAlertStyleChange={setAlertStyle}
           soundEnabled={soundEnabled}
-          onSoundToggle={() => setSoundEnabled(!soundEnabled)}
+          nativeAlerts={nativeAlerts}
+          dndEnabled={dndEnabled}
+          onDndToggle={setDndEnabled}
+          onGrantDnd={requestDndAccess}
+          dndGranted={dndGranted}
+          dndSupported={dndSupported}
           tasks={tasks}
           onAddTask={addTask}
           onToggleTask={toggleTask}
           onDeleteTask={deleteTask}
+          activeTaskId={activeTaskId}
+          onSelectTask={setActiveTask}
           history={history}
           onClearHistory={clearHistory}
           onSessionNote={setSessionNote}

@@ -58,6 +58,11 @@ function HistoryEntry({ entry, number, onNote }) {
       ) : entry.note ? (
         <p className="mt-1 ml-4 text-xs text-gray-500 break-words">{entry.note}</p>
       ) : null}
+
+      {/* What the session counted towards, when a task was chosen for it */}
+      {entry.taskText && !editing && (
+        <p className="mt-0.5 ml-4 text-xs text-gray-400 truncate">{entry.taskText}</p>
+      )}
     </li>
   )
 }

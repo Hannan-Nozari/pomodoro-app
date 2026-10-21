@@ -4,8 +4,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
-import androidx.core.app.NotificationManagerCompat;
-
 /**
  * Clears the running-timer notification the moment the session ends.
  *
@@ -18,6 +16,13 @@ public class TimerDoneReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID);
+        TimerNotification.hide(context);
+        TimerNotification.cancelTick(context);
+        // The widget and the tile are in the same position: nothing else is
+        // awake to tell them the session is over.
+        TimerState.clear(context);
+        // And the phone has to come off Do Not Disturb even if the app that
+        // put it there is long gone.
+        FocusMode.release(context);
     }
 }

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import TaskList from './TaskList'
 import SessionHistory from './SessionHistory'
-import { ALARM_PRESETS } from '../lib/sounds'
+import Stats from './Stats'
+import { ALARM_PRESETS, ALERT_STYLES } from '../lib/sounds'
 
 // ─── Alarm sound picker ───────────────────────────────────────────────────────
 function AlarmPicker({ value, onChange, onPreview, disabled }) {
@@ -44,6 +45,65 @@ function AlarmPicker({ value, onChange, onPreview, disabled }) {
         )
       })}
     </ul>
+  )
+}
+
+// ─── How a finished session announces itself ─────────────────────────────────
+function AlertStylePicker({ value, onChange }) {
+  return (
+    <ul role="radiogroup" aria-label="When a session ends" className="flex flex-col gap-1">
+      {ALERT_STYLES.map(style => {
+        const active = style.id === value
+        return (
+          <li key={style.id}>
+            <button
+              role="radio"
+              aria-checked={active}
+              onClick={() => onChange(style.id)}
+              className={`w-full flex items-start gap-2.5 text-left px-3 py-2 rounded-lg border transition-colors
+                ${active
+                  ? 'border-tomato bg-tomato/5'
+                  : 'border-gray-200 hover:border-gray-300'}`}
+            >
+              <span
+                className={`mt-0.5 w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 transition-colors
+                  ${active ? 'border-tomato bg-tomato' : 'border-gray-300'}`}
+                aria-hidden="true"
+              />
+              <span className="min-w-0">
+                <span className={`block text-sm ${active ? 'text-gray-700' : 'text-gray-500'}`}>
+                  {style.name}
+                </span>
+                <span className="block text-xs text-gray-400 mt-0.5">{style.detail}</span>
+              </span>
+            </button>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
+// ─── Setting toggle ───────────────────────────────────────────────────────────
+function Toggle({ checked, onChange, label, hint }) {
+  return (
+    <div>
+      <button onClick={() => onChange(!checked)} aria-pressed={checked} className="flex items-center gap-3 group">
+        <span
+          className={`relative inline-flex w-10 h-6 rounded-full transition-colors duration-200 flex-shrink-0
+            ${checked ? 'bg-tomato' : 'bg-gray-200'}`}
+        >
+          <span
+            className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200
+              ${checked ? 'translate-x-4' : 'translate-x-0'}`}
+          />
+        </span>
+        <span className="text-sm text-gray-600 group-hover:text-gray-800 transition-colors text-left">
+          {label}
+        </span>
+      </button>
+      {hint && <p className="text-xs text-gray-400 mt-1.5 ml-13">{hint}</p>}
+    </div>
   )
 }
 
@@ -97,8 +157,9 @@ function DurationField({ label, value, onChange, min = 1, max = 90 }) {
 // ─── Advanced panel ───────────────────────────────────────────────────────────
 export default function AdvancedPanel({
   durations, onDurationsChange,
-  soundEnabled, onSoundToggle,
-  tasks, onAddTask, onToggleTask, onDeleteTask,
+  alertStyle, onAlertStyleChange, soundEnabled, nativeAlerts,
+  dndEnabled, onDndToggle, onGrantDnd, dndGranted, dndSupported,
+  tasks, onAddTask, onToggleTask, onDeleteTask, activeTaskId, onSelectTask,
   history, onClearHistory, onSessionNote,
   alarmSound, onAlarmSoundChange, onPreviewAlarm,
 }) {
@@ -171,44 +232,61 @@ export default function AdvancedPanel({
             </div>
           </div>
 
-          {/* ── Sound toggle ── */}
+          {/* ── How a session ends ── */}
           <div>
             <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-              Notifications
+              When a session ends
             </h3>
-            <button
-              onClick={onSoundToggle}
-              aria-pressed={soundEnabled}
-              className="flex items-center gap-3 group"
-            >
-              {/* Toggle pill */}
-              <span
-                className={`
-                  relative inline-flex w-10 h-6 rounded-full transition-colors duration-200
-                  ${soundEnabled ? 'bg-tomato' : 'bg-gray-200'}
-                `}
-              >
-                <span
-                  className={`
-                    absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200
-                    ${soundEnabled ? 'translate-x-4' : 'translate-x-0'}
-                  `}
-                />
-              </span>
-              <span className="text-sm text-gray-600 group-hover:text-gray-800 transition-colors">
-                Sound notification
-              </span>
-            </button>
-
-            <div className="mt-3">
-              <AlarmPicker
-                value={alarmSound}
-                onChange={onAlarmSoundChange}
-                onPreview={onPreviewAlarm}
-                disabled={!soundEnabled}
+            {nativeAlerts ? (
+              <AlertStylePicker value={alertStyle} onChange={onAlertStyleChange} />
+            ) : (
+              // A browser can only play a sound, so it gets the plain choice.
+              <Toggle
+                checked={soundEnabled}
+                onChange={on => onAlertStyleChange(on ? 'alarm' : 'vibrate')}
+                label="Play a sound"
               />
-            </div>
+            )}
+
+            <h4 className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mt-4 mb-2">
+              Sound
+            </h4>
+            <AlarmPicker
+              value={alarmSound}
+              onChange={onAlarmSoundChange}
+              onPreview={onPreviewAlarm}
+              disabled={!soundEnabled}
+            />
+            {nativeAlerts && soundEnabled && (
+              <p className="text-xs text-gray-400 mt-2">
+                With headphones connected, it plays in your headphones.
+              </p>
+            )}
           </div>
+
+          {/* ── Do Not Disturb ── */}
+          {dndSupported && (
+            <div>
+              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                Focus mode
+              </h3>
+              <Toggle
+                checked={dndEnabled}
+                onChange={onDndToggle}
+                label="Silence my phone while focusing"
+                hint="Do Not Disturb turns on for focus sessions only, and alarms still ring."
+              />
+              {/* Only Android can grant this, on its own settings screen. */}
+              {dndEnabled && !dndGranted && (
+                <button
+                  onClick={onGrantDnd}
+                  className="mt-2 ml-13 text-xs font-medium text-tomato hover:underline"
+                >
+                  Grant Do Not Disturb access
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Divider */}
           <div className="border-t border-gray-100" />
@@ -219,7 +297,15 @@ export default function AdvancedPanel({
             onAdd={onAddTask}
             onToggle={onToggleTask}
             onDelete={onDeleteTask}
+            activeTaskId={activeTaskId}
+            onSelect={onSelectTask}
           />
+
+          {/* Divider */}
+          <div className="border-t border-gray-100" />
+
+          {/* ── Weekly stats ── */}
+          <Stats history={history} />
 
           {/* Divider */}
           <div className="border-t border-gray-100" />

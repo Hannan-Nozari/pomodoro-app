@@ -4,7 +4,7 @@
 Pomodoro Timer
 
 ## Short description (≤80)
-A focus timer that keeps exact time even while your phone sleeps. No ads.
+Focus timer with a real alarm, weekly stats and a widget. No ads, no accounts.
 
 ## Full description (≤4000)
 Pomodoro Timer is a focus timer built on one idea: work in one unbroken stretch, then take a real break.
@@ -13,13 +13,23 @@ Set a session, start it, and put the phone down. The timer is anchored to the cl
 
 WHAT YOU GET
 • A clean focus timer with 25 / 5 / 15 minute defaults
-• A live countdown in your notification shade while a session runs
+• A live countdown in your notification shade, with a progress bar and
+  Pause, Resume and Reset buttons — you never have to open the app
 • Adjustable session and break lengths, from 1 to 90 minutes
 • A long break automatically after every fourth focus session
-• A real alarm when time is up: your screen wakes and the alarm sounds, even
-  with the app closed and the phone in your pocket
+• Choose how a session ends: ring like an alarm (your screen wakes and it
+  sounds even on silent), a quiet notification that follows silent mode, or
+  vibrate only
+• Wearing headphones? The sound plays in them, and your music pauses for it
 • Four alarm sounds — chime, bell, beeps or marimba — each one previewable
-• A task list to hold what you are working on
+• A task list: choose what you are focusing on, and every session is counted
+  against it
+• A weekly summary: how long you focused, a bar for each day, your most
+  productive hour, your streak, and the time spent on each task
+• Optional Do Not Disturb for the length of a focus session — it lifts itself
+  when you pause, take a break, or finish, and alarms still get through
+• A home-screen widget and a Quick Settings tile that show the session counting
+  down and start one with a single tap
 • A rolling history of finished sessions, and a note on each one to record
   what you actually worked on
 • Picks up exactly where it left off if the app is reopened

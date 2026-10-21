@@ -34,6 +34,7 @@ service we control, or shared with anyone. Uninstalling the app deletes it, and
 | Exact alarm | So that alert arrives at the moment your session ends, not minutes later |
 | Run at startup | To restore a pending session alert after the device reboots |
 | Wake lock | To let the alert be delivered while the device is idle |
+| Do Not Disturb access | Optional. Only if you turn on Focus mode, so the phone can be silenced for the length of a focus session and unsilenced afterwards |
 | Internet | Required by the Android WebView to load the app's own bundled files; the app makes no network calls |
 
 ## Children

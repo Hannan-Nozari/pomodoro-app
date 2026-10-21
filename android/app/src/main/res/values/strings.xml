@@ -4,4 +4,9 @@
     <string name="title_activity_main">Pomodoro Timer</string>
     <string name="package_name">com.pomodoro.app</string>
     <string name="custom_url_scheme">com.pomodoro.app</string>
+    <string name="widget_description">Start a focus session and watch it count down</string>
+    <string name="widget_idle">Focus</string>
+    <string name="widget_tap">Tap to start</string>
+    <string name="widget_resume">Paused · tap to resume</string>
+    <string name="tile_label">Focus</string>
 </resources>

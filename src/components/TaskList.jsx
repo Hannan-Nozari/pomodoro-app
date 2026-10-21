@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
 
 // ─── Individual task row ───────────────────────────────────────────────────────
-function TaskItem({ task, onToggle, onDelete }) {
+function TaskItem({ task, onToggle, onDelete, isActive, onSelect }) {
   return (
-    <li className="flex items-center gap-3 py-2 group">
+    <li className={`flex items-center gap-3 py-2 group rounded-lg transition-colors
+      ${isActive ? 'bg-tomato/5 px-2 -mx-2' : ''}`}>
       {/* Checkbox */}
       <button
         onClick={() => onToggle(task.id)}
@@ -23,12 +24,22 @@ function TaskItem({ task, onToggle, onDelete }) {
         )}
       </button>
 
-      {/* Task text */}
-      <span
-        className={`flex-1 text-sm ${task.done ? 'line-through text-gray-400' : 'text-gray-700'}`}
+      {/* Tapping the text points the timer at this task */}
+      <button
+        onClick={() => onSelect(task.id)}
+        disabled={task.done}
+        aria-pressed={isActive}
+        className={`flex-1 text-left text-sm truncate transition-colors disabled:cursor-not-allowed
+          ${task.done ? 'line-through text-gray-400' : isActive ? 'text-tomato font-medium' : 'text-gray-700 hover:text-tomato'}`}
       >
         {task.text}
-      </span>
+      </button>
+
+      {isActive && !task.done && (
+        <span className="text-[10px] font-semibold text-tomato uppercase tracking-wider flex-shrink-0">
+          Focusing
+        </span>
+      )}
 
       {/* Delete button — visible on hover */}
       <button
@@ -46,7 +57,7 @@ function TaskItem({ task, onToggle, onDelete }) {
 }
 
 // ─── Task list component ──────────────────────────────────────────────────────
-export default function TaskList({ tasks, onAdd, onToggle, onDelete }) {
+export default function TaskList({ tasks, onAdd, onToggle, onDelete, activeTaskId, onSelect }) {
   const [input, setInput] = useState('')
 
   const handleSubmit = (e) => {
@@ -92,11 +103,25 @@ export default function TaskList({ tasks, onAdd, onToggle, onDelete }) {
         <ul className="divide-y divide-gray-50">
           {/* Pending tasks first */}
           {pending.map(task => (
-            <TaskItem key={task.id} task={task} onToggle={onToggle} onDelete={onDelete} />
+            <TaskItem
+              key={task.id}
+              task={task}
+              onToggle={onToggle}
+              onDelete={onDelete}
+              isActive={task.id === activeTaskId}
+              onSelect={onSelect}
+            />
           ))}
           {/* Completed tasks at the bottom */}
           {completed.map(task => (
-            <TaskItem key={task.id} task={task} onToggle={onToggle} onDelete={onDelete} />
+            <TaskItem
+              key={task.id}
+              task={task}
+              onToggle={onToggle}
+              onDelete={onDelete}
+              isActive={false}
+              onSelect={onSelect}
+            />
           ))}
         </ul>
       )}
@@ -104,6 +129,7 @@ export default function TaskList({ tasks, onAdd, onToggle, onDelete }) {
       {/* Completion summary */}
       {tasks.length > 0 && (
         <p className="text-xs text-gray-400 mt-3 text-right">
+          {activeTaskId ? 'Tap a task to change what you are focusing on · ' : ''}
           {completed.length} / {tasks.length} done
         </p>
       )}

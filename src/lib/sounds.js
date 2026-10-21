@@ -3,6 +3,15 @@ import presetData from './alarm-presets.json'
 export const ALARM_PRESETS = presetData.presets
 export const DEFAULT_ALARM = ALARM_PRESETS[0].id
 
+// How a finished session announces itself. The ids are what the native
+// AlarmService switches on, so they must match it.
+export const ALERT_STYLES = [
+  { id: 'alarm',        name: 'Ring like an alarm', detail: 'Wakes the screen and plays even on silent' },
+  { id: 'notification', name: 'Notification',       detail: 'Notification volume, and follows silent mode' },
+  { id: 'vibrate',      name: 'Vibrate only',       detail: 'No sound at all' },
+]
+export const DEFAULT_ALERT_STYLE = 'alarm'
+
 export const presetName = (id) =>
   ALARM_PRESETS.find(p => p.id === id)?.name ?? ALARM_PRESETS[0].name
 

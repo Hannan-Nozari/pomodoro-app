@@ -61,11 +61,11 @@ const COPY = {
  * backgrounded or killed, which the in-page chime cannot do — a WebView that
  * isn't running plays no sound.
  */
-export async function scheduleAlarm(fireAt, sessionType, soundId = DEFAULT_ALARM, soundEnabled = true) {
+export async function scheduleAlarm(fireAt, sessionType, soundId = DEFAULT_ALARM, style = 'alarm') {
   if (!isNative) return
   const epoch = ++alarmEpoch
-  // Wait out the permission prompt: the alarm screen is a notification with a
-  // full-screen intent, so it needs notification permission to appear.
+  // Wait out the permission prompt: every style ends in a notification, and the
+  // alarm's full-screen alert is one too, so none of them can show without it.
   const granted = await ensureAlarmPermission()
   if (!granted) return
   // The session may have been paused, reset or replaced while we waited.
@@ -77,8 +77,9 @@ export async function scheduleAlarm(fireAt, sessionType, soundId = DEFAULT_ALARM
       at: fireAt,
       title,
       body,
-      // A silent choice still rings the screen; it just picks the quiet file.
-      sound: soundEnabled ? soundFileFor(soundId) : 'alarm_silent',
+      sound: soundFileFor(soundId),
+      // alarm | notification | vibrate — see AlarmService for what each does.
+      style,
     })
   } catch (err) {
     console.warn('Could not schedule alarm:', err)

@@ -28,7 +28,48 @@
             android:name=".AlarmReceiver"
             android:exported="false" />
 
-        <!-- shortService: this rings for at most 90 seconds, so it needs no
+        <!-- Rebuilds a running session's alarm and notification after a
+             reboot or an app update, which clear both. -->
+        <receiver
+            android:name=".BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Pause / Resume / Reset in the shade, and the minute tick that
+             moves the notification's progress bar along. -->
+        <receiver
+            android:name=".TimerActionReceiver"
+            android:exported="false" />
+
+        <!-- Home-screen widget: the countdown without unlocking into the app. -->
+        <receiver
+            android:name=".TimerWidget"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/timer_widget_info" />
+        </receiver>
+
+        <!-- Quick Settings tile: start a session from the shade. -->
+        <service
+            android:name=".TimerTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_stat_pomodoro"
+            android:label="@string/tile_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <!-- shortService: this rings for at most 30 seconds, so it needs no
              broader foreground-service justification. -->
         <service
             android:name=".AlarmService"
@@ -72,4 +113,9 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SHORT_SERVICE" />
+
+    <!-- Silences the phone for the length of a focus session. Granted by the
+         user in system settings, never at runtime; without it the app simply
+         leaves Do Not Disturb alone. -->
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
 </manifest>
